@@ -405,6 +405,30 @@ class Repository < ActiveRecord::Base
     new_record? && project && Repository.where(:project_id => project.id).empty?
   end
 
+  # Returns a hash with statistics by author in the following form:
+  # {
+  #   "John Smith" => { :commits => 45, :changes => 324 },
+  #   "Bob" => { ... }
+  # }
+  #
+  # Notes:
+  # - this hash honnors the users mapping defined for the repository
+  def stats_by_author
+    commits_by_author = Changeset.where("repository_id = ?", id).group(:committer).count
+    commits_by_author.to_a.sort! {|x, y| x.last <=> y.last}
+
+    changes_by_author = Change.joins(:changeset).where("#{Changeset.table_name}.repository_id = ?", id).group(:committer).count
+    h = changes_by_author.inject({}) {|o, i| o[i.first] = i.last; o}
+
+    commits_by_author.inject({}) do |hash, (name, commits_count)|
+      mapped_name = (find_committer_user(name) || name).to_s
+      hash[mapped_name] ||= { :commits_count => 0, :changes_count => 0 }
+      hash[mapped_name][:commits_count] += commits_count
+      hash[mapped_name][:changes_count] += h[name] || 0
+      hash
+    end
+  end
+
   protected
 
   def check_default
