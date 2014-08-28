@@ -1,0 +1,1 @@
+--with-xml2-dir=/opt/rubystack-2.1.2-0/common --with-xslt-dir=/opt/rubystack-2.1.2-0/common --with-xml2-include=/opt/rubystack-2.1.2-0/common/include/libxml2 --with-xslt-include=/opt/rubystack-2.1.2-0/common/include --with-xml2-lib=/opt/rubystack-2.1.2-0/common/lib --with-xslt-lib=/opt/rubystack-2.1.2-0/common/lib 

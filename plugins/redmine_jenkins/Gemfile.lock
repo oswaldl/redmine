@@ -1,0 +1,29 @@
+GIT
+  remote: https://github.com/arangamani/jenkins_api_client.git
+  revision: fd11f0ef7f485e3ecb0579ef3af930219758b02f
+  specs:
+    jenkins_api_client (1.0.1)
+      json
+      mixlib-shellout (>= 1.1.0)
+      nokogiri (~> 1.6.0)
+      terminal-table (>= 1.4.0)
+      thor (>= 0.16.0)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    json (1.8.1)
+    mini_portile (0.6.0)
+    mixlib-shellout (1.4.0)
+    nokogiri (1.6.3.1)
+      mini_portile (= 0.6.0)
+    terminal-table (1.4.5)
+    thor (0.19.1)
+    will_paginate (3.0.7)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  jenkins_api_client!
+  will_paginate
