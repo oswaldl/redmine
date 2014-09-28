@@ -403,6 +403,42 @@ class UserTest < ActiveSupport::TestCase
     end
   end
 
+  def test_password_change_should_destroy_tokens
+    recovery_token = Token.create!(:user_id => 2, :action => 'recovery')
+    autologin_token = Token.create!(:user_id => 2, :action => 'autologin')
+
+    user = User.find(2)
+    user.password, user.password_confirmation = "a new password", "a new password"
+    assert user.save
+
+    assert_nil Token.find_by_id(recovery_token.id)
+    assert_nil Token.find_by_id(autologin_token.id)
+  end
+
+  def test_mail_change_should_destroy_tokens
+    recovery_token = Token.create!(:user_id => 2, :action => 'recovery')
+    autologin_token = Token.create!(:user_id => 2, :action => 'autologin')
+
+    user = User.find(2)
+    user.mail = "user@somwehere.com"
+    assert user.save
+
+    assert_nil Token.find_by_id(recovery_token.id)
+    assert_equal autologin_token, Token.find_by_id(autologin_token.id)
+  end
+
+  def test_change_on_other_fields_should_not_destroy_tokens
+    recovery_token = Token.create!(:user_id => 2, :action => 'recovery')
+    autologin_token = Token.create!(:user_id => 2, :action => 'autologin')
+
+    user = User.find(2)
+    user.firstname = "Bobby"
+    assert user.save
+
+    assert_equal recovery_token, Token.find_by_id(recovery_token.id)
+    assert_equal autologin_token, Token.find_by_id(autologin_token.id)
+  end
+
   def test_validate_login_presence
     @admin.login = ""
     assert !@admin.save
@@ -1016,6 +1052,19 @@ class UserTest < ActiveSupport::TestCase
         assert_equal false, @anonymous.allowed_to?(:add_issues, nil, :global => true)
         assert_equal true, @anonymous.allowed_to?(:view_issues, nil, :global => true)
       end
+    end
+  end
+
+  # this is just a proxy method, the test only calls it to ensure it doesn't break trivially
+  context "#allowed_to_globally?" do
+    should "proxy to #allowed_to? and reflect global permissions" do
+      @dlopper2 = User.find(5) #only Developper on a project, not Manager anywhere
+      @anonymous = User.find(6)
+      assert_equal true, @jsmith.allowed_to_globally?(:delete_issue_watchers)
+      assert_equal false, @dlopper2.allowed_to_globally?(:delete_issue_watchers)
+      assert_equal true, @dlopper2.allowed_to_globally?(:add_issues)
+      assert_equal false, @anonymous.allowed_to_globally?(:add_issues)
+      assert_equal true, @anonymous.allowed_to_globally?(:view_issues)
     end
   end
 

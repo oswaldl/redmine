@@ -299,6 +299,7 @@ span.search_for_watchers a, span.add_attachment a {padding-left:16px; background
   color:#505050;
   line-height:1.5em;
   border: 1px solid #e4e4e4;
+  word-wrap: break-word;
 }
 
 div.square {
@@ -325,7 +326,7 @@ blockquote blockquote { margin-left: 0;}
 abbr  { border-bottom: 1px dotted; cursor: help; }
 textarea.wiki-edit {width:99%; resize:vertical;}
 li p {margin-top: 0;}
-div.issue {background:#ffffdd; padding:6px; margin-bottom:6px;border: 1px solid #d7d7d7;}
+div.issue {background:#ffffdd; padding:6px; margin-bottom:6px;border: 1px solid #d7d7d7; word-wrap: break-word;}
 p.breadcrumb { font-size: 0.9em; margin: 4px 0 4px 0;}
 p.subtitle { font-size: 0.9em; margin: -6px 0 12px 0; font-style: italic; }
 p.footnote { font-size: 0.9em; margin-top: 0px; margin-bottom: 0px; }
@@ -334,7 +335,7 @@ div.issue div.subject div div { padding-left: 16px; }
 div.issue div.subject p {margin: 0; margin-bottom: 0.1em; font-size: 90%; color: #999;}
 div.issue div.subject>div>p { margin-top: 0.5em; }
 div.issue div.subject h3 {margin: 0; margin-bottom: 0.1em;}
-div.issue span.private { position:relative; bottom: 2px; text-transform: uppercase; background: #d22; color: #fff; font-weight:bold; padding: 0px 2px 0px 2px; font-size: 60%; margin-right: 2px; border-radius: 2px;}
+div.issue span.private, div.journal span.private { position:relative; bottom: 2px; text-transform: uppercase; background: #d22; color: #fff; font-weight:bold; padding: 0px 2px 0px 2px; font-size: 60%; margin-right: 2px; border-radius: 2px;}
 div.issue .next-prev-links {color:#999;}
 div.issue table.attributes th {width:22%;}
 div.issue table.attributes td {width:28%;}

@@ -1,12 +1,13 @@
 source 'https://rubygems.org'
 
 gem "rails", "3.2.19"
-gem "jquery-rails", "~> 2.0.2"
+gem "jquery-rails", "~> 3.1.1"
 gem "coderay", "~> 1.1.0"
 gem "fastercsv", "~> 1.5.0", :platforms => [:mri_18, :mingw_18, :jruby]
 gem "builder", ">= 3.0.4"
 gem "request_store", "1.0.5"
 gem "mime-types"
+gem "rbpdf", "~> 1.18.1"
 
 # Optional gem for LDAP authentication
 group :ldap do
@@ -85,6 +86,7 @@ end
 
 group :test do
   gem "shoulda", "~> 3.3.2"
+  gem "shoulda-matchers", "1.4.1"
   gem "mocha", "~> 1.0.0", :require => 'mocha/api'
   if RUBY_VERSION >= '1.9.3'
     gem "capybara", "~> 2.1.0"

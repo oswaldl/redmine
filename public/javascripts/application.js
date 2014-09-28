@@ -2,7 +2,7 @@
    Copyright (C) 2006-2014  Jean-Philippe Lang */
 
 function checkAll(id, checked) {
-  $('#'+id).find('input[type=checkbox]:enabled').attr('checked', checked);
+  $('#'+id).find('input[type=checkbox]:enabled').prop('checked', checked);
 }
 
 function toggleCheckboxesBySelector(selector) {
@@ -10,7 +10,7 @@ function toggleCheckboxesBySelector(selector) {
   $(selector).each(function(index) {
     if (!$(this).is(':checked')) { all_checked = false; }
   });
-  $(selector).attr('checked', !all_checked);
+  $(selector).prop('checked', !all_checked);
 }
 
 function showAndScrollTo(id, focus) {
@@ -81,13 +81,13 @@ function initFilters() {
   $('#filters-table td.field input[type=checkbox]').each(function() {
     toggleFilter($(this).val());
   });
-  $('#filters-table td.field input[type=checkbox]').live('click', function() {
+  $('#filters-table').on('click', 'td.field input[type=checkbox]', function() {
     toggleFilter($(this).val());
   });
-  $('#filters-table .toggle-multiselect').live('click', function() {
+  $('#filters-table').on('click', '.toggle-multiselect', function() {
     toggleMultiSelect($(this).siblings('select'));
   });
-  $('#filters-table input[type=text]').live('keypress', function(e) {
+  $('#filters-table').on('keypress', 'input[type=text]', function(e) {
     if (e.keyCode == 13) submit_query_form("query_form");
   });
 }
@@ -100,7 +100,7 @@ function addFilter(field, operator, values) {
   } else {
     buildFilterRow(field, operator, values);
   }
-  $('#cb_'+fieldId).attr('checked', true);
+  $('#cb_'+fieldId).prop('checked', true);
   toggleFilter(field);
   $('#add_filter_select').val('').children('option').each(function() {
     if ($(this).attr('value') == field) {
@@ -537,10 +537,10 @@ function initMyPageSortable(list, url) {
 var warnLeavingUnsavedMessage;
 function warnLeavingUnsaved(message) {
   warnLeavingUnsavedMessage = message;
-  $('form').live('submit', function(){
+  $(document).on('submit', 'form', function(){
     $('textarea').removeData('changed');
   });
-  $('textarea').live('change', function(){
+  $(document).on('change', 'textarea', function(){
     $(this).data('changed', 'changed');
   });
   window.onbeforeunload = function(){
@@ -555,12 +555,12 @@ function warnLeavingUnsaved(message) {
 }
 
 function setupAjaxIndicator() {
-  $('#ajax-indicator').bind('ajaxSend', function(event, xhr, settings) {
+  $(document).bind('ajaxSend', function(event, xhr, settings) {
     if ($('.ajax-loading').length === 0 && settings.contentType != 'application/octet-stream') {
       $('#ajax-indicator').show();
     }
   });
-  $('#ajax-indicator').bind('ajaxStop', function() {
+  $(document).bind('ajaxStop', function() {
     $('#ajax-indicator').hide();
   });
 }
