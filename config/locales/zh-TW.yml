@@ -936,6 +936,8 @@
   label_group: 群組
   label_group_plural: 群組清單
   label_group_new: 建立新群組
+  label_group_anonymous: 匿名用戶
+  label_group_non_member: 非成員用戶
   label_time_entry_plural: 耗用工時
   label_version_sharing_none: 不共用
   label_version_sharing_descendants: 與子專案共用
