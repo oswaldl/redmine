@@ -125,12 +125,28 @@ class GroupTest < ActiveSupport::TestCase
   end
 
   def test_destroy_should_unassign_issues
-    group = Group.first
+    group = Group.find(10)
     Issue.where(:id => 1).update_all(["assigned_to_id = ?", group.id])
 
     assert group.destroy
     assert group.destroyed?
 
     assert_equal nil, Issue.find(1).assigned_to_id
+  end
+
+  def test_builtin_id_with_anonymous_user_should_return_anonymous_group
+    assert_equal 13, Group.builtin_id(User.anonymous)
+  end
+
+  def test_builtin_id_with_anonymous_role_should_return_anonymous_group
+    assert_equal 13, Group.builtin_id(Role.anonymous)
+  end
+
+  def test_builtin_id_with_user_should_return_non_member_group
+    assert_equal 12, Group.builtin_id(User.find(1))
+  end
+
+  def test_builtin_id_with_non_member_role_should_return_non_member_group
+    assert_equal 12, Group.builtin_id(Role.non_member)
   end
 end
