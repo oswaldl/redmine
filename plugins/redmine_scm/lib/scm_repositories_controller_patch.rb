@@ -26,6 +26,10 @@ module ScmRepositoriesControllerPatch
 
     module InstanceMethods
 
+        def show_empty_page
+          render :action => 'show_git_empty'
+        end
+
         def delete_scm
             if @repository.created_with_scm && ScmConfig['deny_delete']
                 Rails.logger.info "Deletion denied: #{@repository.root_url}"
