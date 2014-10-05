@@ -95,7 +95,6 @@ module ScmRepositoriesControllerPatch
                     if params[:operation].present? && params[:operation] == 'add'
                         attributes = interface.sanitize(attributes)
                     end
-                    byebug
 
                     @repository = Repository.factory(params[:repository_scm])
                     if @repository.respond_to?(:safe_attribute_names) && @repository.safe_attribute_names.any?
