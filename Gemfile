@@ -1,4 +1,5 @@
-source 'https://rubygems.org'
+#source 'https://rubygems.org'
+source 'http://ruby.taobao.org'
 
 gem "rails", "3.2.19"
 gem "jquery-rails", "~> 3.1.1"
@@ -108,5 +109,4 @@ Dir.glob File.expand_path("../plugins/*/{Gemfile,PluginGemfile}", __FILE__) do |
 end
 
 
-# add by oswaldl
-gem 'byebug'
+require 'byebug'
