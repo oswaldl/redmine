@@ -11,6 +11,7 @@ require_dependency 'creator/mercurial_creator'
 require_dependency 'creator/git_creator'
 require_dependency 'creator/bazaar_creator'
 require_dependency 'creator/github_creator'
+require_dependency 'creator/gitlab_creator'
 
 require_dependency 'scm_config'
 require_dependency 'scm_hook'

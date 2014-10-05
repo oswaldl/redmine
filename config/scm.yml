@@ -9,14 +9,15 @@ production:
   max_repos: 0
   only_creator: false
   svn:
-    path: /var/lib/svn
+    path: /var/scm_repo/svn
+    svn: /usr/bin/svn
     svnadmin: /usr/bin/svnadmin
     url: svn
   git:
-    path: /opt/rubystack-2.1.2-0/git/bin/git
-    git: /opt/rubystack-2.1.2-0/git/bin/git
+    path: /var/scm_repo/git
+    git: /usr/bin/git
     options: --bare
-    url: http://git.myhost.com
+    url: http://zyac-open.chinacloudapp.cn:3000
     update_server_info: true
     git_ext: true
     append: trunk
@@ -28,6 +29,10 @@ production:
     bzr: /usr/bin/bzr
     init: init-repository
     log_encoding: UTF-8
+  gitlab:
+    path: /var/scm_repo/gitlab
+    options: --bare
+    url: http://zyac-open.chinacloudapp.cn:8888
 
 development:
   deny_delete: true
@@ -40,14 +45,15 @@ development:
   max_repos: 0
   only_creator: false
   svn:
-    path: /var/lib/svn
+    path: /var/scm_repo/svn
+    svn: /usr/bin/svn
     svnadmin: /usr/bin/svnadmin
     url: svn
   git:
-    path: /opt/rubystack-2.1.2-0/git/bin/git
-    git: /opt/rubystack-2.1.2-0/git/bin/git
+    path: /var/scm_repo/git
+    git: /usr/bin/git
     options: --bare
-    url: http://git.myhost.com
+    url: http://zyac-open.chinacloudapp.cn:3000
     update_server_info: true
     git_ext: true
     append: trunk
@@ -59,3 +65,7 @@ development:
     bzr: /usr/bin/bzr
     init: init-repository
     log_encoding: UTF-8
+  gitlab:
+    path: /var/scm_repo/gitlab
+    options: --bare
+    url: http://zyac-open.chinacloudapp.cn:8888

@@ -78,7 +78,6 @@ module ScmRepositoriesControllerPatch
 
             def create_with_scm
                 interface = SCMCreator.interface(params[:repository_scm])
-
                 if (interface && (interface < SCMCreator) && interface.enabled? &&
                   ((params[:operation].present? && params[:operation] == 'add') || ScmConfig['only_creator'])) ||
                    !ScmConfig['allow_add_local']
@@ -96,6 +95,7 @@ module ScmRepositoriesControllerPatch
                     if params[:operation].present? && params[:operation] == 'add'
                         attributes = interface.sanitize(attributes)
                     end
+                    byebug
 
                     @repository = Repository.factory(params[:repository_scm])
                     if @repository.respond_to?(:safe_attribute_names) && @repository.safe_attribute_names.any?
@@ -109,7 +109,6 @@ module ScmRepositoriesControllerPatch
 
                     if @repository
                         @repository.project = @project
-
                         if @repository.valid? && params[:operation].present? && params[:operation] == 'add'
                             if !ScmConfig['max_repos'] || ScmConfig['max_repos'].to_i == 0 ||
                                @project.repositories.select{ |r| r.created_with_scm }.size < ScmConfig['max_repos'].to_i
