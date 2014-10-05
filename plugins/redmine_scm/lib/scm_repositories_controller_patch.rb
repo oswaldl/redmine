@@ -12,6 +12,7 @@ module ScmRepositoriesControllerPatch
             alias_method_chain :destroy, :confirmation
 
             if Project.method_defined?(:repositories)
+                alias_method_chain :show, :scm
                 alias_method_chain :create, :scm
                 alias_method_chain :update, :scm
             else
@@ -32,8 +33,28 @@ module ScmRepositoriesControllerPatch
             end
         end
 
+
+
         # Redmine >= 1.4.x
         if Project.method_defined?(:repositories)
+
+
+            def show_with_scm
+
+              @repository.fetch_changesets if @project.active? && Setting.autofetch_changesets? && @path.empty?
+
+              @entries = @repository.entries(@path, @rev)
+              @changeset = @repository.find_changeset_by_name(@rev)
+              if request.xhr?
+                @entries ? render(:partial => 'dir_list_content') : render(:nothing => true)
+              else
+                (show_empty_page; return) unless @entries
+                @changesets = @repository.latest_changesets(@path, @rev)
+                @properties = @repository.properties(@path, @rev)
+                @repositories = @project.repositories
+                render :action => 'show'
+              end
+            end
 
             # Original function
             #def create
@@ -232,6 +253,7 @@ module ScmRepositoriesControllerPatch
                 destroy_without_confirmation
             end
         end
+
 
     private
 

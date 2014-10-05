@@ -24,6 +24,7 @@ class ScmHook  < Redmine::Hook::ViewListener
     end
 
     render_on :view_projects_form, :partial => 'projects/scm'
+    render_on :view_layouts_base_html_head, :partial => 'redmine_scm/html_header'
 
 private
 
