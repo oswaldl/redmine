@@ -5,6 +5,7 @@ module ScmRepositoriesControllerPatch
     def self.included(base)
         base.extend(ClassMethods)
         base.send(:include, InstanceMethods)
+        base.send(:include, RedmineGitlab::GitlabMethods)
         base.class_eval do
             unloadable
             before_filter :delete_scm, :only => :destroy
@@ -110,8 +111,20 @@ module ScmRepositoriesControllerPatch
                         @repository.project = @project
                         if @repository.valid? && params[:operation].present? && params[:operation] == 'add'
                             if !ScmConfig['max_repos'] || ScmConfig['max_repos'].to_i == 0 ||
-                               @project.repositories.select{ |r| r.created_with_scm }.size < ScmConfig['max_repos'].to_i
-                                scm_create_repository(@repository, interface, attributes['url'])
+                                @project.repositories.select{ |r| r.created_with_scm }.size < ScmConfig['max_repos'].to_i
+
+                                #-------------------------------------------gitlab init------------------------------------------------
+                                byebug
+                                result = init_gitlab_token(@repository,User.current,params['repository']['login'],params['repository']['password'])
+                                if result == 'HTTPUnauthorized'
+                                  @repository.errors.add(:base, :gitlab_account_invalid, :login => params['repository']['login'])
+                                elsif result == 'not_gitlab'
+                                  # pass
+                                else
+                                   scm_create_repository(@repository, interface, attributes['url'])
+                                end
+                                #------------------------------------------------------------------------------------------------------
+
                             else
                                 @repository.errors.add(:base, :scm_repositories_maximum_count_exceeded, :max => ScmConfig['max_repos'].to_i)
                             end
@@ -258,6 +271,19 @@ module ScmRepositoriesControllerPatch
 
 
     private
+
+        # you're welcome to add more, here the returns:
+        # "not_gitlab"
+        # private_token "3253e125sdg"
+        # "HTTPUnauthorized"
+        # unknow_error: "***"
+        def init_gitlab_token(repository,user,username,password)
+          byebug
+          if repository.type != 'Repository::Gitlab'
+            return "not_gitlab";
+          end
+          fetch_set_token(user,username,password);
+        end
 
         def scm_create_repository(repository, interface, url)
             name = interface.repository_name(url)

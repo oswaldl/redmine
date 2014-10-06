@@ -1,4 +1,11 @@
+require 'redmine_gitlab/gitlab_methods'
+
 class GitlabCreator < SCMCreator
+  extend RedmineGitlab::GitlabMethods
+
+  def self.included(base)
+    base.send(:include, InstanceMethods)
+  end
 
   class << self
 
@@ -22,6 +29,22 @@ class GitlabCreator < SCMCreator
     # repository : gitlab
     def create_repository(path, repository = nil)
       puts "create_repository----------------222222-----#{path}-----#{repository}----"
+
+      #create project on gitlab
+      if User.current.gitlab_token.nil?
+        raise "no gitlab token found in user #{User.current.login}"
+      end
+
+      attrs = {}
+      attrs['token'] = User.current.gitlab_token;
+      attrs['title'] = repository.identifier;
+      attrs['description'] = 'this repository is created by zycode.';
+      attrs['visibility'] = true;
+      byebug
+      gitlab_create(attrs);
+
+
+      # init git and do fetch
       args = [ git_command, 'init' ]
       append_options(args)
       args << path

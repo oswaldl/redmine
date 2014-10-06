@@ -29,3 +29,5 @@ en:
         scm_local_repositories_denied: Adding local repositories was denied by administrator
         scm_only_creator: Use "Create new repository" button to create/add a repository
         scm_repository_creation_failed: Repository creation failed
+
+  gitlab_account_invalid: gitlab account "%{login}" invalid

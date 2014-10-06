@@ -1,0 +1,15 @@
+en:
+  gl_endpoint: Gitlab endpoint
+  gl_gitlab_settings: Gitlab settings
+  gl_private_token: Gitlab private token
+
+  gl_field_repository_name: Gitlab repository name
+  gl_text_repository_name_note: Gitlab repository name description
+  gl_field_repository_namespace: Gitlab repository namespace
+  gl_text_repository_namespace_note: Gitlab repository namespace description
+  gl_field_user_name: username
+  gl_text_user_name: gitlab username
+  gl_field_password: password
+  gl_text_password: gitlab password
+  gl_field_repository_url: Gitlab repository url
+  gl_text_repository_url_note: Gitlab repository url description
