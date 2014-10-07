@@ -11,11 +11,16 @@ class GitlabHookController < ActionController::Base
       repositories = find_repositories
 
       repositories.each do |repository|
-        # Fetch the changes from GitLab
-        update_repository(repository)
+        begin
+          # Fetch the changes from GitLab
+          update_repository(repository)
 
-        # Fetch the new changesets into Redmine
-        repository.fetch_changesets
+          # Fetch the new changesets into Redmine
+          repository.fetch_changesets
+        rescue Exception => e
+          puts e
+        end
+
       end
       render(:text => 'OK')
     else
