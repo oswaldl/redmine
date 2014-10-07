@@ -149,7 +149,7 @@ class Repository::Gitlab < Repository
   private
 
   def git_command
-    options['git'] || Redmine::Scm::Adapters::GitAdapter::GIT_BIN
+    Redmine::Scm::Adapters::GitAdapter::GIT_BIN
   end
 
 end
