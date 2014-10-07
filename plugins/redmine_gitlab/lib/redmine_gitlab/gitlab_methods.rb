@@ -38,6 +38,12 @@ module RedmineGitlab
 
       # ready to do transfer
       gitlab.transfer_project_to_group(gitlab_group_data.id, gitlab_project_data.id)
+
+      # add webhook
+      # http://zyac-open.chinacloudapp.cn:3000/gitlab_hook?project_id=test_project&key=j2g7kds9341hj6sdk
+      byebug
+      webhook_url = Setting.protocol.downcase + '://' + Setting.host_name + '/gitlab_hook?project_id=' + attrs['project_identifier'] + '&key=' + Setting.sys_api_key
+      gitlab.add_project_hook(gitlab_project_data.id, webhook_url)
     end
 
 
