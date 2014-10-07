@@ -44,7 +44,6 @@ class GitlabCreator < SCMCreator
 
 
       # init git and do fetch
-      byebug
 
       # go to root path, eg: /var/scm_repo/gitlab
       Dir.chdir(ScmConfig['gitlab']['path']) do
