@@ -28,6 +28,20 @@ class Repository::Gitlab < Repository
   end
 
   def fetch_changesets
+    #remote fetch
+    http_path = root_url || url
+
+    start_index = http_path.rindex('/')
+    end_index = http_path.length
+
+    repo_path = ScmConfig['gitlab']['path'].to_s + http_path[start_index,end_index] +ScmConfig['gitlab']['append'].to_s
+
+    Dir.chdir(repo_path) do
+      system(git_command, 'fetch -q --all -p')
+    end
+
+
+    #local fetch
     scm_brs = branches
     return if scm_brs.nil? || scm_brs.empty?
 
@@ -131,5 +145,11 @@ class Repository::Gitlab < Repository
     changeset
   end
   private :save_revision
+
+  private
+
+  def git_command
+    options['git'] || Redmine::Scm::Adapters::GitAdapter::GIT_BIN
+  end
 
 end
