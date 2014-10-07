@@ -37,7 +37,12 @@ module RedmineGitlab
       end
 
       # ready to do transfer
-      gitlab.transfer_project_to_group(gitlab_group_data.id, gitlab_project_data.id)
+      if gitlab_project_data.namespace.name != gitlab_group_data.name
+        gitlab.transfer_project_to_group(gitlab_group_data.id, gitlab_project_data.id)
+      end
+
+
+
 
       # add webhook
       # http://zyac-open.chinacloudapp.cn:3000/gitlab_hook?project_id=test_project&key=j2g7kds9341hj6sdk
