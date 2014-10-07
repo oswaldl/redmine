@@ -16,7 +16,7 @@
         touch README
         git add README
         git commit -m 'first_commit'
-        git remote add origin <%=@repository.url%>
+        git remote add origin <%=@repository.url + ScmConfig['gitlab']['append'].to_s%>
         git push -u origin master
     </pre>
     <iframe id="tmp_downloadhelper_iframe" style="display: none;"></iframe>
@@ -26,7 +26,7 @@
     <legend>Existing Git Repo?</legend>
     <pre class="dark">
         cd existing_git_repo
-        git remote add origin <%=@repository.url%>
+        git remote add origin <%=@repository.url + ScmConfig['gitlab']['append'].to_s%>
         git push -u origin master
     </pre>
   </fieldset>

@@ -25,10 +25,9 @@ class GitlabCreator < SCMCreator
       false
     end
 
-    # path : /var/scm_repo/gitlab/cdcdc
+    # path : /var/scm_repo/gitlab/repo_demp
     # repository : gitlab
     def create_repository(path, repository = nil)
-      puts "create_repository----------------222222-----#{path}-----#{repository}----"
 
       #create project on gitlab
       if User.current.gitlab_token.nil?
@@ -45,27 +44,43 @@ class GitlabCreator < SCMCreator
 
 
       # init git and do fetch
-      args = [ git_command, 'init' ]
-      append_options(args)
-      args << path
-      if system(*args)
-        if options['update_server_info']
-          Dir.chdir(path) do
-            system(git_command, 'update-server-info')
+      byebug
+
+      # go to root path, eg: /var/scm_repo/gitlab
+      Dir.chdir(ScmConfig['gitlab']['path']) do
+        args = [ git_command, 'clone' ]
+        append_options(args)
+
+        #--------set username & password in url------------
+        # TODO http or https or ssh
+        tmp_url = repository.url.gsub("http://","")
+        tmp_url = repository.login + ':' + repository.password + '@' + tmp_url
+
+        args << ('http://' + tmp_url + ScmConfig['gitlab']['append'].to_s)
+        #--------------------
+
+
+        if system(*args)
+          if options['update_server_info']
+            Dir.chdir(path) do
+              system(git_command, 'fetch -q --all -p')
+            end
           end
+          true
+        else
+          false
         end
-        true
-      else
-        false
       end
+
+
     end
 
     def access_root_url(path, repository)
-      (repository.url.nil? || repository.url == "") ? (ScmConfig['gitlab']['url'].to_s+'/'+(repository.project.identifier)) : repository.root_url
+      (repository.url.nil? || repository.url == "") ? (ScmConfig['gitlab']['url'].to_s + '/' + (repository.project.identifier)) : repository.root_url
     end
 
     def access_url(path, repository)
-      (repository.url.nil? || repository.url == "") ? (ScmConfig['gitlab']['url'].to_s+'/'+(repository.project.identifier)) : repository.url
+      (repository.url.nil? || repository.url == "") ? (ScmConfig['gitlab']['url'].to_s + '/' + (repository.project.identifier)) : repository.url
     end
 
     def repository_name(path)
