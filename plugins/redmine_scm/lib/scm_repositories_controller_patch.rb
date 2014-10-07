@@ -114,7 +114,6 @@ module ScmRepositoriesControllerPatch
                                 @project.repositories.select{ |r| r.created_with_scm }.size < ScmConfig['max_repos'].to_i
 
                                 #-------------------------------------------gitlab init------------------------------------------------
-                                byebug
                                 result = init_gitlab_token(@repository,User.current,params['repository']['login'],params['repository']['password'])
                                 if result == 'HTTPUnauthorized'
                                   @repository.errors.add(:base, :gitlab_account_invalid, :login => params['repository']['login'])
@@ -278,7 +277,6 @@ module ScmRepositoriesControllerPatch
         # "HTTPUnauthorized"
         # unknow_error: "***"
         def init_gitlab_token(repository,user,username,password)
-          byebug
           if repository.type != 'Repository::Gitlab'
             return "not_gitlab";
           end

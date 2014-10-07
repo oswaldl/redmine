@@ -40,7 +40,7 @@ class GitlabCreator < SCMCreator
       attrs['title'] = repository.identifier;
       attrs['description'] = 'this repository is created by zycode.';
       attrs['visibility'] = true;
-      byebug
+      attrs['project_identifier'] = repository.project.identifier;
       gitlab_create(attrs);
 
 

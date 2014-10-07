@@ -2,10 +2,45 @@ require 'gitlab'
 
 module RedmineGitlab
 	module GitlabMethods
+
+    # title is the repository name
+    # project_identifier is the group name
 		def gitlab_create(attrs)
+      if attrs['project_identifier'].nil?
+        raise("no group id in attrs['project_identifier']")
+      end
+
 			gitlab = gitlab_configure(attrs['token'])
-			gitlab.create_project(attrs['title'], description: attrs['description'], visibility_level: attrs['visibility'])
-		end
+
+      # ready to check gitlab project exist
+      gitlab_project_data = nil
+      begin
+        gitlab_project_data = gitlab.project(attrs['title'])
+      rescue Exception => e
+        puts e
+      end
+
+      if gitlab_project_data.nil?
+        gitlab_project_data = gitlab.create_project(attrs['title'], description: attrs['description'], visibility_level: attrs['visibility'])
+      end
+
+      # ready to check gitlab group exist
+      gitlab_group_data = nil
+      begin
+        gitlab_group_data = gitlab.group(attrs['project_identifier'])
+      rescue Exception => e
+        puts e
+      end
+
+      if gitlab_group_data.nil?
+        gitlab_group_data = gitlab.create_group(attrs['project_identifier'], attrs['project_identifier'])
+      end
+
+      # ready to do transfer
+      byebug
+      gitlab.transfer_project_to_group(gitlab_group_data.id, gitlab_project_data.id)
+    end
+
 
 		def gitlab_configure(token)
 			Gitlab.client(endpoint: (ScmConfig['gitlab']['url'].to_s + '/api/v3'), private_token: token)
