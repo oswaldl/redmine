@@ -37,7 +37,6 @@ module RedmineGitlab
       end
 
       # ready to do transfer
-      byebug
       gitlab.transfer_project_to_group(gitlab_group_data.id, gitlab_project_data.id)
     end
 
