@@ -24,7 +24,8 @@ class GitlabHookController < ActionController::Base
       end
       render(:text => 'OK')
     else
-      raise ActionController::RoutingError.new('Not Found')
+      #raise ActionController::RoutingError.new('Not Found')
+      render(:text => 'Not Found')
     end    
   end
 
