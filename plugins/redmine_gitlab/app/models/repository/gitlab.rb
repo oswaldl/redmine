@@ -29,21 +29,21 @@ class Repository::Gitlab < Repository
 
   def fetch_changesets
     #remote fetch
-    http_path = (root_url.nil? || root_url == "") ? url : root_url
-
-    start_index = http_path.rindex('/')
-    end_index = http_path.length
-
-    repo_path = ScmConfig['gitlab']['path'].to_s + http_path[start_index,end_index] +ScmConfig['gitlab']['append'].to_s
-
-    logger.info "cd #{repo_path} and do #{git_command} 'fetch -q --all -p'"
-    args = [ git_command, 'fetch' ]
-    args << '-q'
-    args << '--all'
-    args << '-p'
-    Dir.chdir(repo_path) do
-      system(*args)
-    end
+    # http_path = (root_url.nil? || root_url == "") ? url : root_url
+    #
+    # start_index = http_path.rindex('/')
+    # end_index = http_path.length
+    #
+    # repo_path = ScmConfig['gitlab']['path'].to_s + http_path[start_index,end_index] +ScmConfig['gitlab']['append'].to_s
+    #
+    # logger.info "cd #{repo_path} and do #{git_command} 'fetch -q --all -p'"
+    # args = [ git_command, 'fetch' ]
+    # args << '-q'
+    # args << '--all'
+    # args << '-p'
+    # Dir.chdir(repo_path) do
+    #   system(*args)
+    # end
 
 
     #local fetch
