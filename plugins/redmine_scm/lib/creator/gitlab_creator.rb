@@ -62,7 +62,11 @@ class GitlabCreator < SCMCreator
         if system(*args)
           if options['update_server_info']
             Dir.chdir(path) do
-              system(git_command, 'fetch -q --all -p')
+              args = [ git_command, 'fetch' ]
+              args << '-q'
+              args << '--all'
+              args << '-p'
+              system(*args)
             end
           end
           true
