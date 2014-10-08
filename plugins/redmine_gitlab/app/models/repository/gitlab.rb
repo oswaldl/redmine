@@ -36,14 +36,14 @@ class Repository::Gitlab < Repository
 
     repo_path = ScmConfig['gitlab']['path'].to_s + http_path[start_index,end_index] +ScmConfig['gitlab']['append'].to_s
 
-    # logger.info "cd #{repo_path} and do #{git_command} 'fetch -q --all -p'"
-    # args = [ git_command, 'fetch' ]
-    # args << '-q'
-    # args << '--all'
-    # args << '-p'
-    # Dir.chdir(repo_path) do
-    #   system(*args)
-    # end
+    logger.info "cd #{repo_path} and do #{git_command} 'fetch -q --all -p'"
+    args = [ git_command, 'fetch' ]
+    args << '-q'
+    args << '--all'
+    args << '-p'
+    Dir.chdir(repo_path) do
+      system(*args)
+    end
 
 
     #local fetch
