@@ -1,0 +1,33 @@
+<div class="git-empty">
+  <fieldset>
+    <legend>Git global setup:</legend>
+    <pre class="dark">
+        git config --global user.name <%=User.current.login%>
+        git config --global user.email <%=User.current.mail%>
+    </pre>
+  </fieldset>
+
+  <fieldset>
+    <legend>Create Repository</legend>
+    <pre class="dark">
+        mkdir <%=@repository.identifier%>
+        cd <%=@repository.identifier%>
+        git init
+        touch README
+        git add README
+        git commit -m 'first_commit'
+        git remote add origin <%=@repository.url + ScmConfig['github']['append'].to_s%>
+        git push -u origin master
+    </pre>
+    <iframe id="tmp_downloadhelper_iframe" style="display: none;"></iframe>
+  </fieldset>
+
+  <fieldset>
+    <legend>Existing Git Repo?</legend>
+    <pre class="dark">
+        cd existing_git_repo
+        git remote add origin <%=@repository.url + ScmConfig['github']['append'].to_s%>
+        git push -u origin master
+    </pre>
+  </fieldset>
+</div>

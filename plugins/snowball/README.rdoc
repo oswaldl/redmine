@@ -1,0 +1,16 @@
+= snowball
+
+Redmine Plugin
+
+目前包括
+1. project vote
+2. github集成(开发中)
+
+
+
+github api reference
+http://www.rubydoc.info/gems/octokit/3.4.2/frames
+
+things to do:
+1.use username&password and set api when creating github repo
+2.when creating repo, check if the repo exist, if so use the exist one and do not raise exception here

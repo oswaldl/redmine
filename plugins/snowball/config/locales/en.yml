@@ -1,0 +1,24 @@
+# English strings go here for Rails i18n
+en:
+  # my_label: "My label"
+  snowball_label_vote_result: "Vote Result"
+  snowball_label_vote_count: "Votes"
+
+  gh_endpoint: Github endpoint
+  gh_gitlab_settings: Github settings
+  gh_private_token: Github private token
+
+  gh_field_repository_name: Github repository name
+  gh_text_repository_name_note: Github repository name description
+  gh_field_repository_namespace: Github repository namespace
+  gh_text_repository_namespace_note: Github repository namespace description
+  gh_field_user_name: username
+  gh_text_user_name: Github username
+  gh_field_password: password
+  gh_text_password: Github password
+  gh_field_repository_url: Github repository url
+  gh_text_repository_url_note: Github repository url description
+
+
+
+

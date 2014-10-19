@@ -146,11 +146,17 @@ class GithubCreator < SCMCreator
     private
 
         def client
-            @client ||= if api['token']
+            if api
+              @client ||= if api['token']
                 Octokit::Client.new(:access_token => api['token'])
-            else
+              else
                 Octokit::Client.new(:login => api['username'], :password => api['password'])
+              end
+            else
+              raise("please set api values!")
             end
+
+
         end
 
         def create_options

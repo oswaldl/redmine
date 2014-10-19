@@ -27,8 +27,13 @@ module ScmRepositoriesControllerPatch
 
     module InstanceMethods
 
-        def show_empty_page
-          render :action => 'show_git_empty'
+        def show_empty_page(repository)
+          if repository.type == 'Repository::Gitlab'
+            render :action => 'show_gitlab_empty'
+          else
+            render :action => 'show_github_empty'
+          end
+
         end
 
         def delete_scm
@@ -45,15 +50,14 @@ module ScmRepositoriesControllerPatch
 
 
             def show_with_scm
-
-              @repository.fetch_changesets if @project.active? && Setting.autofetch_changesets? && @path.empty?
+              @repository.fetch_changesets if @project.active? && Setting.autofetch_changesets? && @path.empty? && File.exists?(@repository.root_url)
 
               @entries = @repository.entries(@path, @rev)
               @changeset = @repository.find_changeset_by_name(@rev)
               if request.xhr?
                 @entries ? render(:partial => 'dir_list_content') : render(:nothing => true)
               else
-                (show_empty_page; return) unless @entries
+                (show_empty_page(@repository); return) unless @entries
                 @changesets = @repository.latest_changesets(@path, @rev)
                 @properties = @repository.properties(@path, @rev)
                 @repositories = @project.repositories
@@ -277,10 +281,15 @@ module ScmRepositoriesControllerPatch
         # "HTTPUnauthorized"
         # unknow_error: "***"
         def init_gitlab_token(repository,user,username,password)
-          if repository.type != 'Repository::Gitlab'
+          if repository.type != 'Repository::Gitlab' && repository.type != 'Repository::Github'
             return "not_gitlab";
           end
-          fetch_set_token(user,username,password);
+
+          if repository.type == 'Repository::Gitlab'
+            fetch_set_token(user,username,password);
+          elsif repository.type == 'Repository::Github'
+            # we may do something later
+          end
         end
 
         def scm_create_repository(repository, interface, url)

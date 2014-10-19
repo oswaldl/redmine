@@ -1,0 +1,22 @@
+<% #unless User.current.login == '' %>
+    <% unless  @project.nil? || @project[:id].nil? || @issue.nil? || @issue[:id].nil? %>
+        <div id="snowball-vote" class="snowball-vote-area" data-project="<%=@project[:id] %>" data-issue="<%=@issue[:id]%>">
+          <% unless User.current.login == '' %>
+            <div><a class="snowball-vote-button" href="#" data-point="1">▲</a></div>
+          <% end %>
+
+          <div class="snowball-vote-point">-</div>
+
+          <% unless User.current.login == '' %>
+             <div><a class="snowball-vote-button" href="#" data-point="-1">▼</a></div>
+          <% end %>
+        </div>
+        <label id="snowball_label_vote_count" style="display:none"><%=l(:snowball_label_vote_count)%></label>
+    <% end %>
+
+    <input type="hidden" id="snowball-vote-base-url" value="<%=url_for :controller => 'welcome' %>" />
+
+    <% unless  @project.nil? || @project[:id].nil? %>
+    <input type="hidden" id="snowball-vote-base-project" value="<%=@project[:id] %>" />
+    <% end %>
+<% #end %>

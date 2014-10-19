@@ -1,0 +1,25 @@
+<% if @voted_issue.length > 0 %>
+<div id="snowball-vote-result">
+  <h2><%= l(:snowball_label_vote_result) %> (前<%=SnowballProjectVoteController::MAX_VOTELIST%>个)</h2>
+  <table class="list issues snowball-votes-result-table">
+    <thead><tr>
+      <th><%= l(:field_project) %></th>
+      <th><%= l(:field_subject) %></th>
+      <th><%= l(:field_author) %></th>
+      <th><%= l(:field_created_on) %></th>
+      <th><%= l(:label_vote_count) %></th>
+    </tr></thead>
+    <tbody>
+    <% @voted_issue.each do |issue| %>
+      <tr class="issue <%= cycle 'odd', 'even' %>">
+        <td class="project"><%= link_to h(issue.project), project_path(@project) %></td>
+        <td class="subject"><%= link_to h(issue.subject), issue_path(issue) %></td>
+        <td class="author"><%= link_to_user(issue.author) %></td>
+        <td class="created_on"><%= format_time(issue.created_on) %></td>
+        <td class="vote-count"><%= @votes_issues[issue.id] %></td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+</div>
+<% end %>
