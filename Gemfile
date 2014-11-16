@@ -105,4 +105,4 @@ Dir.glob File.expand_path("../plugins/*/{Gemfile,PluginGemfile}", __FILE__) do |
 end
 
 
-require 'byebug'
+gem 'byebug'
