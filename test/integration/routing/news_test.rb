@@ -17,7 +17,7 @@
 
 require File.expand_path('../../../test_helper', __FILE__)
 
-class RoutingNewsTest < ActionController::IntegrationTest
+class RoutingNewsTest < ActionDispatch::IntegrationTest
   def test_news_index
     assert_routing(
         { :method => 'get', :path => "/news" },
@@ -26,14 +26,6 @@ class RoutingNewsTest < ActionController::IntegrationTest
     assert_routing(
         { :method => 'get', :path => "/news.atom" },
         { :controller => 'news', :action => 'index', :format => 'atom' }
-      )
-    assert_routing(
-        { :method => 'get', :path => "/news.xml" },
-        { :controller => 'news', :action => 'index', :format => 'xml' }
-      )
-    assert_routing(
-        { :method => 'get', :path => "/news.json" },
-        { :controller => 'news', :action => 'index', :format => 'json' }
       )
   end
 
@@ -68,16 +60,6 @@ class RoutingNewsTest < ActionController::IntegrationTest
     assert_routing(
         { :method => 'get', :path => "/projects/567/news.atom" },
         { :controller => 'news', :action => 'index', :format => 'atom',
-          :project_id => '567' }
-      )
-    assert_routing(
-        { :method => 'get', :path => "/projects/567/news.xml" },
-        { :controller => 'news', :action => 'index', :format => 'xml',
-          :project_id => '567' }
-      )
-    assert_routing(
-        { :method => 'get', :path => "/projects/567/news.json" },
-        { :controller => 'news', :action => 'index', :format => 'json',
           :project_id => '567' }
       )
     assert_routing(

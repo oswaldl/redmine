@@ -22,9 +22,9 @@ class TimeEntry < ActiveRecord::Base
   belongs_to :project
   belongs_to :issue
   belongs_to :user
-  belongs_to :activity, :class_name => 'TimeEntryActivity', :foreign_key => 'activity_id'
+  belongs_to :activity, :class_name => 'TimeEntryActivity'
 
-  attr_protected :project_id, :user_id, :tyear, :tmonth, :tweek
+  attr_protected :user_id, :tyear, :tmonth, :tweek
 
   acts_as_customizable
   acts_as_event :title => Proc.new {|o| "#{l_hours(o.hours)} (#{(o.issue || o.project).event_title})"},
@@ -35,7 +35,7 @@ class TimeEntry < ActiveRecord::Base
 
   acts_as_activity_provider :timestamp => "#{table_name}.created_on",
                             :author_key => :user_id,
-                            :find_options => {:include => :project}
+                            :scope => preload(:project)
 
   validates_presence_of :user_id, :activity_id, :project_id, :hours, :spent_on
   validates_numericality_of :hours, :allow_nil => true, :message => :invalid
@@ -45,13 +45,16 @@ class TimeEntry < ActiveRecord::Base
   validate :validate_time_entry
 
   scope :visible, lambda {|*args|
-    includes(:project).where(Project.allowed_to_condition(args.shift || User.current, :view_time_entries, *args))
+    joins(:project).
+    where(Project.allowed_to_condition(args.shift || User.current, :view_time_entries, *args))
   }
   scope :on_issue, lambda {|issue|
-    includes(:issue).where("#{Issue.table_name}.root_id = #{issue.root_id} AND #{Issue.table_name}.lft >= #{issue.lft} AND #{Issue.table_name}.rgt <= #{issue.rgt}")
+    joins(:issue).
+    where("#{Issue.table_name}.root_id = #{issue.root_id} AND #{Issue.table_name}.lft >= #{issue.lft} AND #{Issue.table_name}.rgt <= #{issue.rgt}")
   }
   scope :on_project, lambda {|project, include_subprojects|
-    includes(:project).where(project.project_condition(include_subprojects))
+    joins(:project).
+    where(project.project_condition(include_subprojects))
   }
   scope :spent_between, lambda {|from, to|
     if from && to
@@ -65,7 +68,7 @@ class TimeEntry < ActiveRecord::Base
     end
   }
 
-  safe_attributes 'hours', 'comments', 'issue_id', 'activity_id', 'spent_on', 'custom_field_values', 'custom_fields'
+  safe_attributes 'hours', 'comments', 'project_id', 'issue_id', 'activity_id', 'spent_on', 'custom_field_values', 'custom_fields'
 
   def initialize(attributes=nil, *args)
     super
@@ -78,10 +81,12 @@ class TimeEntry < ActiveRecord::Base
   end
 
   def safe_attributes=(attrs, user=User.current)
-    attrs = super
-    if !new_record? && issue && issue.project_id != project_id
-      if user.allowed_to?(:log_time, issue.project)
-        self.project_id = issue.project_id
+    if attrs
+      attrs = super(attrs)
+      if issue_id_changed? && attrs[:project_id].blank? && issue && issue.project_id != project_id
+        if user.allowed_to?(:log_time, issue.project)
+          self.project_id = issue.project_id
+        end
       end
     end
     attrs

@@ -17,31 +17,19 @@
 
 require File.expand_path('../../../test_helper', __FILE__)
 
-class RoutingIssueStatusesTest < ActionController::IntegrationTest
+class RoutingIssueStatusesTest < ActionDispatch::IntegrationTest
   def test_issue_statuses
     assert_routing(
         { :method => 'get', :path => "/issue_statuses" },
         { :controller => 'issue_statuses', :action => 'index' }
       )
     assert_routing(
-        { :method => 'get', :path => "/issue_statuses.xml" },
-        { :controller => 'issue_statuses', :action => 'index', :format => 'xml' }
-      )
-    assert_routing(
         { :method => 'post', :path => "/issue_statuses" },
         { :controller => 'issue_statuses', :action => 'create' }
       )
     assert_routing(
-        { :method => 'post', :path => "/issue_statuses.xml" },
-        { :controller => 'issue_statuses', :action => 'create', :format => 'xml' }
-      )
-    assert_routing(
         { :method => 'get', :path => "/issue_statuses/new" },
         { :controller => 'issue_statuses', :action => 'new' }
-      )
-    assert_routing(
-        { :method => 'get', :path => "/issue_statuses/new.xml" },
-        { :controller => 'issue_statuses', :action => 'new', :format => 'xml' }
       )
     assert_routing(
         { :method => 'get', :path => "/issue_statuses/1/edit" },
@@ -53,28 +41,13 @@ class RoutingIssueStatusesTest < ActionController::IntegrationTest
           :id => '1' }
       )
     assert_routing(
-        { :method => 'put', :path => "/issue_statuses/1.xml" },
-        { :controller => 'issue_statuses', :action => 'update',
-          :format => 'xml', :id => '1' }
-      )
-    assert_routing(
         { :method => 'delete', :path => "/issue_statuses/1" },
         { :controller => 'issue_statuses', :action => 'destroy',
           :id => '1' }
       )
     assert_routing(
-        { :method => 'delete', :path => "/issue_statuses/1.xml" },
-        { :controller => 'issue_statuses', :action => 'destroy',
-          :format => 'xml', :id => '1' }
-      )
-    assert_routing(
         { :method => 'post', :path => "/issue_statuses/update_issue_done_ratio" },
         { :controller => 'issue_statuses', :action => 'update_issue_done_ratio' }
-      )
-    assert_routing(
-        { :method => 'post', :path => "/issue_statuses/update_issue_done_ratio.xml" },
-        { :controller => 'issue_statuses', :action => 'update_issue_done_ratio',
-          :format => 'xml' }
       )
   end
 end

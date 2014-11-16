@@ -152,8 +152,7 @@ module RepositoriesHelper
   def subversion_field_tags(form, repository)
       content_tag('p', form.text_field(:url, :size => 60, :required => true,
                        :disabled => !repository.safe_attribute?('url')) +
-                       '<br />'.html_safe +
-                       '(file:///, http://, https://, svn://, svn+[tunnelscheme]://)') +
+                       scm_path_info_tag(repository)) +
       content_tag('p', form.text_field(:login, :size => 30)) +
       content_tag('p', form.password_field(
                             :password, :size => 30, :name => 'ignore',
@@ -166,10 +165,9 @@ module RepositoriesHelper
     content_tag('p', form.text_field(
                      :url, :label => l(:field_path_to_repository),
                      :size => 60, :required => true,
-                     :disabled => !repository.safe_attribute?('url'))) +
-    content_tag('p', form.select(
-                     :log_encoding, [nil] + Setting::ENCODINGS,
-                     :label => l(:field_commit_logs_encoding), :required => true))
+                     :disabled => !repository.safe_attribute?('url')) +
+                     scm_path_info_tag(repository)) +
+    scm_log_encoding_tag(form, repository)
   end
 
   def mercurial_field_tags(form, repository)
@@ -178,12 +176,8 @@ module RepositoriesHelper
                        :size => 60, :required => true,
                        :disabled => !repository.safe_attribute?('url')
                          ) +
-                     '<br />'.html_safe + l(:text_mercurial_repository_note)) +
-    content_tag('p', form.select(
-                        :path_encoding, [nil] + Setting::ENCODINGS,
-                        :label => l(:field_scm_path_encoding)
-                        ) +
-                     '<br />'.html_safe + l(:text_scm_path_encoding_note))
+                     scm_path_info_tag(repository)) +
+    scm_path_encoding_tag(form, repository)
   end
 
   def git_field_tags(form, repository)
@@ -192,13 +186,8 @@ module RepositoriesHelper
                        :size => 60, :required => true,
                        :disabled => !repository.safe_attribute?('url')
                          ) +
-                      '<br />'.html_safe +
-                      l(:text_git_repository_note)) +
-    content_tag('p', form.select(
-                        :path_encoding, [nil] + Setting::ENCODINGS,
-                        :label => l(:field_scm_path_encoding)
-                        ) +
-                     '<br />'.html_safe + l(:text_scm_path_encoding_note)) +
+                      scm_path_info_tag(repository)) +
+    scm_path_encoding_tag(form, repository) +
     content_tag('p', form.check_box(
                         :extra_report_last_commit,
                         :label => l(:label_git_report_last_commit)
@@ -210,42 +199,70 @@ module RepositoriesHelper
                      :root_url,
                      :label => l(:field_cvsroot),
                      :size => 60, :required => true,
-                     :disabled => !repository.safe_attribute?('root_url'))) +
+                     :disabled => !repository.safe_attribute?('root_url')) +
+                     scm_path_info_tag(repository)) +
     content_tag('p', form.text_field(
                      :url,
                      :label => l(:field_cvs_module),
                      :size => 30, :required => true,
                      :disabled => !repository.safe_attribute?('url'))) +
-    content_tag('p', form.select(
-                     :log_encoding, [nil] + Setting::ENCODINGS,
-                     :label => l(:field_commit_logs_encoding), :required => true)) +
-    content_tag('p', form.select(
-                        :path_encoding, [nil] + Setting::ENCODINGS,
-                        :label => l(:field_scm_path_encoding)
-                        ) +
-                     '<br />'.html_safe + l(:text_scm_path_encoding_note))
+    scm_log_encoding_tag(form, repository) +
+    scm_path_encoding_tag(form, repository)
   end
 
   def bazaar_field_tags(form, repository)
     content_tag('p', form.text_field(
                      :url, :label => l(:field_path_to_repository),
                      :size => 60, :required => true,
-                     :disabled => !repository.safe_attribute?('url'))) +
-    content_tag('p', form.select(
-                     :log_encoding, [nil] + Setting::ENCODINGS,
-                     :label => l(:field_commit_logs_encoding), :required => true))
+                     :disabled => !repository.safe_attribute?('url')) +
+                     scm_path_info_tag(repository)) +
+    scm_log_encoding_tag(form, repository)
   end
 
   def filesystem_field_tags(form, repository)
     content_tag('p', form.text_field(
                      :url, :label => l(:field_root_directory),
                      :size => 60, :required => true,
-                     :disabled => !repository.safe_attribute?('url'))) +
-    content_tag('p', form.select(
-                        :path_encoding, [nil] + Setting::ENCODINGS,
-                        :label => l(:field_scm_path_encoding)
-                        ) +
-                     '<br />'.html_safe + l(:text_scm_path_encoding_note))
+                     :disabled => !repository.safe_attribute?('url')) +
+                     scm_path_info_tag(repository)) +
+    scm_path_encoding_tag(form, repository)
+  end
+
+  def scm_path_info_tag(repository)
+    text = scm_path_info(repository)
+    if text.present?
+      content_tag('em', text, :class => 'info')
+    else
+      ''
+    end
+  end
+
+  def scm_path_info(repository)
+    scm_name = repository.scm_name.to_s.downcase
+
+    info_from_config = Redmine::Configuration["scm_#{scm_name}_path_info"].presence
+    return info_from_config.html_safe if info_from_config
+
+    l("text_#{scm_name}_repository_note", :default => '')
+  end
+
+  def scm_log_encoding_tag(form, repository)
+    select = form.select(
+      :log_encoding,
+      [nil] + Setting::ENCODINGS,
+      :label => l(:field_commit_logs_encoding),
+      :required => true
+    )
+    content_tag('p', select)
+  end
+
+  def scm_path_encoding_tag(form, repository)
+    select = form.select(
+      :path_encoding,
+      [nil] + Setting::ENCODINGS,
+      :label => l(:field_scm_path_encoding)
+    )
+    content_tag('p', select + content_tag('em', l(:text_scm_path_encoding_note), :class => 'info'))
   end
 
   def index_commits(commits, heads)

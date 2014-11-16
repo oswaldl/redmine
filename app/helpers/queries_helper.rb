@@ -97,14 +97,15 @@ module QueriesHelper
       link_to value, issue_path(issue)
     when :subject
       link_to value, issue_path(issue)
+    when :parent
+      value ? (value.visible? ? link_to_issue(value, :subject => false) : "##{value.id}") : ''
     when :description
       issue.description? ? content_tag('div', textilizable(issue, :description), :class => "wiki") : ''
     when :done_ratio
       progress_bar(value, :width => '80px')
     when :relations
-      other = value.other_issue(issue)
       content_tag('span',
-        (l(value.label_for(issue)) + " " + link_to_issue(other, :subject => false, :tracker => false)).html_safe,
+        value.to_s(issue) {|other| link_to_issue(other, :subject => false, :tracker => false)}.html_safe,
         :class => value.css_classes_for(issue))
     else
       format_object(value)
@@ -120,14 +121,19 @@ module QueriesHelper
     end
   end
 
-  def csv_value(column, issue, value)
+  def csv_value(column, object, value)
     format_object(value, false) do |value|
       case value.class.name
       when 'Float'
         sprintf("%.2f", value).gsub('.', l(:general_csv_decimal_separator))
       when 'IssueRelation'
-        other = value.other_issue(issue)
-        l(value.label_for(issue)) + " ##{other.id}"
+        value.to_s(object)
+      when 'Issue'
+        if object.is_a?(TimeEntry)
+          "#{value.tracker} ##{value.id}: #{value.subject}"
+        else
+          value.id
+        end
       else
         value
       end
@@ -143,7 +149,7 @@ module QueriesHelper
       end
     end
 
-    export = FCSV.generate(:col_sep => l(:general_csv_separator)) do |csv|
+    export = CSV.generate(:col_sep => l(:general_csv_separator)) do |csv|
       # csv header fields
       csv << columns.collect {|c| Redmine::CodesetUtil.from_utf8(c.caption.to_s, encoding) }
       # csv lines

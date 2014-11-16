@@ -63,12 +63,7 @@ require 'redmine/themes'
 require 'redmine/hook'
 require 'redmine/plugin'
 
-if RUBY_VERSION < '1.9'
-  require 'fastercsv'
-else
-  require 'csv'
-  FCSV = CSV
-end
+require 'csv'
 
 Redmine::Scm::Base.add "Subversion"
 Redmine::Scm::Base.add "Darcs"
@@ -87,7 +82,7 @@ Redmine::AccessControl.map do |map|
   map.permission :close_project, {:projects => [:close, :reopen]}, :require => :member, :read => true
   map.permission :select_project_modules, {:projects => :modules}, :require => :member
   map.permission :view_members, {:members => [:index, :show]}, :public => true, :read => true
-  map.permission :manage_members, {:projects => :settings, :members => [:index, :show, :create, :update, :destroy, :autocomplete]}, :require => :member
+  map.permission :manage_members, {:projects => :settings, :members => [:index, :show, :new, :create, :update, :destroy, :autocomplete]}, :require => :member
   map.permission :manage_versions, {:projects => :settings, :versions => [:new, :create, :edit, :update, :close_completed, :destroy]}, :require => :member
   map.permission :add_subprojects, {:projects => [:new, :create]}, :require => :member
 

@@ -39,29 +39,8 @@ module Redmine
           set_rtl(l(:direction) == 'rtl')
           set_temp_rtl(l(:direction) == 'rtl' ? 'R' : 'L')
 
-          case current_language.to_s.downcase
-          when 'vi'
-            @font_for_content = 'DejaVuSans'
-            @font_for_footer  = 'DejaVuSans'
-          when 'ja'
-            @font_for_content = 'kozminproregular'
-            @font_for_footer  = 'kozminproregular'
-          when 'zh-tw' # Traditional Chinese (BIG5)
-            @font_for_content = 'msungstdlight'
-            @font_for_footer  = 'msungstdlight'
-          when 'zh' # Simplified Chinese (GB18030)
-            @font_for_content = 'stsongstdlight'
-            @font_for_footer  = 'stsongstdlight'
-          when 'ko' # Korean (UHC)
-            @font_for_content = 'hysmyeongjostdmedium'
-            @font_for_footer  = 'hysmyeongjostdmedium'
-          when 'th' # Thai
-            @font_for_content = 'freeserif'
-            @font_for_footer  = 'freeserif'
-          else
-            @font_for_content = 'freesans'
-            @font_for_footer  = 'freesans'
-          end
+          @font_for_content = l(:general_pdf_fontname)
+          @font_for_footer  = l(:general_pdf_fontname)
           set_creator(Redmine::Info.app_name)
           set_font(@font_for_content)
 
@@ -543,16 +522,14 @@ module Redmine
           pdf.RDMCell(35+155,5, l(:label_related_issues) + ":", "LTR")
           pdf.ln
           relations.each do |relation|
-            buf = ""
-            buf += "#{l(relation.label_for(issue))} "
-            if relation.delay && relation.delay != 0
-              buf += "(#{l('datetime.distance_in_words.x_days', :count => relation.delay)}) "
-            end
-            if Setting.cross_project_issue_relations?
-              buf += "#{relation.other_issue(issue).project} - "
-            end
-            buf += "#{relation.other_issue(issue).tracker}" +
-                   " # #{relation.other_issue(issue).id}: #{relation.other_issue(issue).subject}"
+            buf = relation.to_s(issue) {|other|
+              text = ""
+              if Setting.cross_project_issue_relations?
+                text += "#{relation.other_issue(issue).project} - "
+              end
+              text += "#{other.tracker} ##{other.id}: #{other.subject}"
+              text
+            }
             buf = buf.truncate(truncate_length)
             pdf.SetFontStyle('', 8)
             pdf.RDMCell(35+155-60, 5, buf, border_first)
@@ -699,9 +676,7 @@ module Redmine
         def self.rdm_from_utf8(txt, encoding)
           txt ||= ''
           txt = Redmine::CodesetUtil.from_utf8(txt, encoding)
-          if txt.respond_to?(:force_encoding)
-            txt.force_encoding('ASCII-8BIT')
-          end
+          txt.force_encoding('ASCII-8BIT')
           txt
         end
 

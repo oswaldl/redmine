@@ -106,17 +106,20 @@ class UsersControllerTest < ActionController::TestCase
     assert_response 404
   end
 
-  def test_show_should_not_reveal_users_with_no_visible_activity_or_project
-    @request.session[:user_id] = nil
-    get :show, :id => 9
-    assert_response 404
-  end
-
   def test_show_inactive_by_admin
     @request.session[:user_id] = 1
     get :show, :id => 5
     assert_response 200
     assert_not_nil assigns(:user)
+  end
+
+  def test_show_user_who_is_not_visible_should_return_404
+    Role.anonymous.update! :users_visibility => 'members_of_visible_projects'
+    user = User.generate!
+
+    @request.session[:user_id] = nil
+    get :show, :id => user.id
+    assert_response 404
   end
 
   def test_show_displays_memberships_based_on_project_visibility
@@ -423,79 +426,5 @@ class UsersControllerTest < ActionController::TestCase
       delete :destroy, :id => 2, :back_url => '/users?name=foo'
     end
     assert_redirected_to '/users?name=foo'
-  end
-
-  def test_create_membership
-    assert_difference 'Member.count' do
-      post :edit_membership, :id => 7, :membership => { :project_id => 3, :role_ids => [2]}
-    end
-    assert_redirected_to :action => 'edit', :id => '7', :tab => 'memberships'
-    member = Member.order('id DESC').first
-    assert_equal User.find(7), member.principal
-    assert_equal [2], member.role_ids
-    assert_equal 3, member.project_id
-  end
-
-  def test_create_membership_js_format
-    assert_difference 'Member.count' do
-      post :edit_membership, :id => 7, :membership => {:project_id => 3, :role_ids => [2]}, :format => 'js'
-      assert_response :success
-      assert_template 'edit_membership'
-      assert_equal 'text/javascript', response.content_type
-    end
-    member = Member.order('id DESC').first
-    assert_equal User.find(7), member.principal
-    assert_equal [2], member.role_ids
-    assert_equal 3, member.project_id
-    assert_include 'tab-content-memberships', response.body
-  end
-
-  def test_create_membership_js_format_with_failure
-    assert_no_difference 'Member.count' do
-      post :edit_membership, :id => 7, :membership => {:project_id => 3}, :format => 'js'
-      assert_response :success
-      assert_template 'edit_membership'
-      assert_equal 'text/javascript', response.content_type
-    end
-    assert_include 'alert', response.body, "Alert message not sent"
-    assert_include 'Role can\\\'t be empty', response.body, "Error message not sent"
-  end
-
-  def test_update_membership
-    assert_no_difference 'Member.count' do
-      put :edit_membership, :id => 2, :membership_id => 1, :membership => { :role_ids => [2]}
-      assert_redirected_to :action => 'edit', :id => '2', :tab => 'memberships'
-    end
-    assert_equal [2], Member.find(1).role_ids
-  end
-
-  def test_update_membership_js_format
-    assert_no_difference 'Member.count' do
-      put :edit_membership, :id => 2, :membership_id => 1, :membership => {:role_ids => [2]}, :format => 'js'
-      assert_response :success
-      assert_template 'edit_membership'
-      assert_equal 'text/javascript', response.content_type
-    end
-    assert_equal [2], Member.find(1).role_ids
-    assert_include 'tab-content-memberships', response.body
-  end
-
-  def test_destroy_membership
-    assert_difference 'Member.count', -1 do
-      delete :destroy_membership, :id => 2, :membership_id => 1
-    end
-    assert_redirected_to :action => 'edit', :id => '2', :tab => 'memberships'
-    assert_nil Member.find_by_id(1)
-  end
-
-  def test_destroy_membership_js_format
-    assert_difference 'Member.count', -1 do
-      delete :destroy_membership, :id => 2, :membership_id => 1, :format => 'js'
-      assert_response :success
-      assert_template 'destroy_membership'
-      assert_equal 'text/javascript', response.content_type
-    end
-    assert_nil Member.find_by_id(1)
-    assert_include 'tab-content-memberships', response.body
   end
 end

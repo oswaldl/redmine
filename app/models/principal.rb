@@ -25,16 +25,42 @@ class Principal < ActiveRecord::Base
   STATUS_LOCKED     = 3
 
   has_many :members, :foreign_key => 'user_id', :dependent => :destroy
-  has_many :memberships, :class_name => 'Member',
-           :foreign_key => 'user_id',
-           :include => [:project, :roles],
-           :conditions => "#{Project.table_name}.status<>#{Project::STATUS_ARCHIVED}",
-           :order => "#{Project.table_name}.name"
+  has_many :memberships,
+           lambda {preload(:project, :roles).
+                   joins(:project).
+                   where("#{Project.table_name}.status<>#{Project::STATUS_ARCHIVED}").
+                   order("#{Project.table_name}.name")},
+           :class_name => 'Member',
+           :foreign_key => 'user_id'
   has_many :projects, :through => :memberships
   has_many :issue_categories, :foreign_key => 'assigned_to_id', :dependent => :nullify
 
   # Groups and active users
   scope :active, lambda { where(:status => STATUS_ACTIVE) }
+
+  scope :visible, lambda {|*args|
+    user = args.first || User.current
+
+    if user.admin?
+      all
+    else
+      view_all_active = false
+      if user.memberships.to_a.any?
+        view_all_active = user.memberships.any? {|m| m.roles.any? {|r| r.users_visibility == 'all'}}
+      else
+        view_all_active = user.builtin_role.users_visibility == 'all'
+      end
+  
+      if view_all_active
+        active
+      else
+        # self and members of visible projects
+        active.where("#{table_name}.id = ? OR #{table_name}.id IN (SELECT user_id FROM #{Member.table_name} WHERE project_id IN (?))",
+          user.id, user.visible_project_ids
+        )
+      end
+    end
+  }
 
   scope :like, lambda {|q|
     q = q.to_s
@@ -56,8 +82,8 @@ class Principal < ActiveRecord::Base
 
   # Principals that are members of a collection of projects
   scope :member_of, lambda {|projects|
-    projects = [projects] unless projects.is_a?(Array)
-    if projects.empty?
+    projects = [projects] if projects.is_a?(Project)
+    if projects.blank?
       where("1=0")
     else
       ids = projects.map(&:id)
@@ -80,6 +106,15 @@ class Principal < ActiveRecord::Base
 
   def name(formatter = nil)
     to_s
+  end
+
+  def visible?(user=User.current)
+    Principal.visible(user).where(:id => id).first == self
+  end
+
+  # Return true if the principal is a member of project
+  def member_of?(project)
+    projects.to_a.include?(project)
   end
 
   def <=>(principal)

@@ -84,7 +84,8 @@ module SortHelper
     def to_sql
       sql = @criteria.collect do |k,o|
         if s = @available_criteria[k]
-          (o ? s.to_a : s.to_a.collect {|c| append_desc(c)})
+          s = [s] unless s.is_a?(Array)
+          (o ? s : s.collect {|c| append_desc(c)})
         end
       end.flatten.compact
       sql.blank? ? nil : sql
@@ -238,6 +239,18 @@ module SortHelper
     default_order = options.delete(:default_order) || 'asc'
     options[:title] = l(:label_sort_by, "\"#{caption}\"") unless options[:title]
     content_tag('th', sort_link(column, caption, default_order), options)
+  end
+
+  # Returns the css classes for the current sort order
+  #
+  # Example:
+  #
+  #   sort_css_classes
+  #   # => "sort-by-created-on sort-desc"
+  def sort_css_classes
+    if @sort_criteria.first_key
+      "sort-by-#{@sort_criteria.first_key.to_s.dasherize} sort-#{@sort_criteria.first_asc? ? 'asc' : 'desc'}"
+    end
   end
 end
 

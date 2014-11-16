@@ -25,6 +25,17 @@ class MembersControllerTest < ActionController::TestCase
     @request.session[:user_id] = 2
   end
 
+  def test_new
+    get :new, :project_id => 1
+    assert_response :success
+  end
+
+  def test_xhr_new
+    xhr :get, :new, :project_id => 1
+    assert_response :success
+    assert_equal 'text/javascript', response.content_type
+  end
+
   def test_create
     assert_difference 'Member.count' do
       post :create, :project_id => 1, :membership => {:role_ids => [1], :user_id => 7}
@@ -104,7 +115,7 @@ class MembersControllerTest < ActionController::TestCase
   end
 
   def test_autocomplete
-    get :autocomplete, :project_id => 1, :q => 'mis', :format => 'js'
+    xhr :get, :autocomplete, :project_id => 1, :q => 'mis', :format => 'js'
     assert_response :success
     assert_include 'User Misc', response.body
   end

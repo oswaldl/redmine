@@ -40,11 +40,11 @@ class IssueTest < ActiveSupport::TestCase
 
     assert_nil issue.project_id
     assert_nil issue.tracker_id
+    assert_nil issue.status_id
     assert_nil issue.author_id
     assert_nil issue.assigned_to_id
     assert_nil issue.category_id
 
-    assert_equal IssueStatus.default, issue.status
     assert_equal IssuePriority.default, issue.priority
   end
 
@@ -59,10 +59,9 @@ class IssueTest < ActiveSupport::TestCase
   end
 
   def test_create_minimal
-    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 3,
-                      :status_id => 1, :priority => IssuePriority.all.first,
-                      :subject => 'test_create')
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 3, :subject => 'test_create')
     assert issue.save
+    assert_equal issue.tracker.default_status, issue.status
     assert issue.description.nil?
     assert_nil issue.estimated_hours
   end
@@ -204,7 +203,7 @@ class IssueTest < ActiveSupport::TestCase
 
   def test_visible_scope_for_anonymous
     # Anonymous user should see issues of public projects only
-    issues = Issue.visible(User.anonymous).all
+    issues = Issue.visible(User.anonymous).to_a
     assert issues.any?
     assert_nil issues.detect {|issue| !issue.project.is_public?}
     assert_nil issues.detect {|issue| issue.is_private?}
@@ -214,7 +213,7 @@ class IssueTest < ActiveSupport::TestCase
   def test_visible_scope_for_anonymous_without_view_issues_permissions
     # Anonymous user should not see issues without permission
     Role.anonymous.remove_permission!(:view_issues)
-    issues = Issue.visible(User.anonymous).all
+    issues = Issue.visible(User.anonymous).to_a
     assert issues.empty?
     assert_visibility_match User.anonymous, issues
   end
@@ -247,7 +246,7 @@ class IssueTest < ActiveSupport::TestCase
     user = User.find(9)
     assert user.projects.empty?
     # Non member user should see issues of public projects only
-    issues = Issue.visible(user).all
+    issues = Issue.visible(user).to_a
     assert issues.any?
     assert_nil issues.detect {|issue| !issue.project.is_public?}
     assert_nil issues.detect {|issue| issue.is_private?}
@@ -259,7 +258,7 @@ class IssueTest < ActiveSupport::TestCase
     Issue.create!(:project_id => 1, :tracker_id => 1, :author_id => 9, :subject => 'Issue by non member')
     user = User.find(9)
 
-    issues = Issue.visible(user).all
+    issues = Issue.visible(user).to_a
     assert issues.any?
     assert_nil issues.detect {|issue| issue.author != user}
     assert_visibility_match user, issues
@@ -270,7 +269,7 @@ class IssueTest < ActiveSupport::TestCase
     Role.non_member.remove_permission!(:view_issues)
     user = User.find(9)
     assert user.projects.empty?
-    issues = Issue.visible(user).all
+    issues = Issue.visible(user).to_a
     assert issues.empty?
     assert_visibility_match user, issues
   end
@@ -291,7 +290,7 @@ class IssueTest < ActiveSupport::TestCase
     # User should see issues of projects for which user has view_issues permissions only
     Role.non_member.remove_permission!(:view_issues)
     Member.create!(:principal => user, :project_id => 3, :role_ids => [2])
-    issues = Issue.visible(user).all
+    issues = Issue.visible(user).to_a
     assert issues.any?
     assert_nil issues.detect {|issue| issue.project_id != 3}
     assert_nil issues.detect {|issue| issue.is_private?}
@@ -311,12 +310,12 @@ class IssueTest < ActiveSupport::TestCase
       :is_private => true)
 
     Role.find(2).update_attribute :issues_visibility, 'default'
-    issues = Issue.visible(User.find(8)).all
+    issues = Issue.visible(User.find(8)).to_a
     assert issues.any?
     assert issues.include?(issue)
 
     Role.find(2).update_attribute :issues_visibility, 'own'
-    issues = Issue.visible(User.find(8)).all
+    issues = Issue.visible(User.find(8)).to_a
     assert issues.any?
     assert issues.include?(issue)
   end
@@ -325,7 +324,7 @@ class IssueTest < ActiveSupport::TestCase
     user = User.find(1)
     user.members.each(&:destroy)
     assert user.projects.empty?
-    issues = Issue.visible(user).all
+    issues = Issue.visible(user).to_a
     assert issues.any?
     # Admin should see issues on private projects that admin does not belong to
     assert issues.detect {|issue| !issue.project.is_public?}
@@ -336,7 +335,7 @@ class IssueTest < ActiveSupport::TestCase
 
   def test_visible_scope_with_project
     project = Project.find(1)
-    issues = Issue.visible(User.find(2), :project => project).all
+    issues = Issue.visible(User.find(2), :project => project).to_a
     projects = issues.collect(&:project).uniq
     assert_equal 1, projects.size
     assert_equal project, projects.first
@@ -344,7 +343,7 @@ class IssueTest < ActiveSupport::TestCase
 
   def test_visible_scope_with_project_and_subprojects
     project = Project.find(1)
-    issues = Issue.visible(User.find(2), :project => project, :with_subprojects => true).all
+    issues = Issue.visible(User.find(2), :project => project, :with_subprojects => true).to_a
     projects = issues.collect(&:project).uniq
     assert projects.size > 1
     assert_equal [], projects.select {|p| !p.is_or_is_descendant_of?(project)}
@@ -370,13 +369,20 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal 2, parent.descendants.visible(user).collect{|i| i}.size
   end
 
+  def test_visible_scope_with_unsaved_user_should_not_raise_an_error
+    user = User.new
+    assert_nothing_raised do
+      Issue.visible(user).to_a
+    end
+  end
+
   def test_open_scope
-    issues = Issue.open.all
+    issues = Issue.open.to_a
     assert_nil issues.detect(&:closed?)
   end
 
   def test_open_scope_with_arg
-    issues = Issue.open(false).all
+    issues = Issue.open(false).to_a
     assert_equal issues, issues.select(&:closed?)
   end
 
@@ -830,6 +836,26 @@ class IssueTest < ActiveSupport::TestCase
     assert issue.save
   end
 
+  def test_required_attribute_that_is_disabled_for_the_tracker_should_not_be_required
+    WorkflowPermission.delete_all
+    WorkflowPermission.create!(:old_status_id => 1, :tracker_id => 1,
+                               :role_id => 1, :field_name => 'start_date',
+                               :rule => 'required')
+    user = User.find(2)
+
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :status_id => 1,
+                      :subject => 'Required fields', :author => user)
+    assert !issue.save
+    assert_include "Start date can't be blank", issue.errors.full_messages
+
+    tracker = Tracker.find(1)
+    tracker.core_fields -= %w(start_date)
+    tracker.save!
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :status_id => 1,
+                      :subject => 'Required fields', :author => user)
+    assert issue.save
+  end
+
   def test_required_attribute_names_for_multiple_roles_should_intersect_rules
     WorkflowPermission.delete_all
     WorkflowPermission.create!(:old_status_id => 1, :tracker_id => 1,
@@ -901,7 +927,7 @@ class IssueTest < ActiveSupport::TestCase
 
   def test_copy_should_copy_status
     orig = Issue.find(8)
-    assert orig.status != IssueStatus.default
+    assert orig.status != orig.default_status
 
     issue = Issue.new.copy_from(orig)
     assert issue.save
@@ -1289,7 +1315,7 @@ class IssueTest < ActiveSupport::TestCase
   end
 
   test "#copy should not create a journal" do
-    copy = Issue.find(1).copy(:project_id => 3, :tracker_id => 2, :assigned_to_id => 3)
+    copy = Issue.find(1).copy({:project_id => 3, :tracker_id => 2, :assigned_to_id => 3}, :link => false)
     copy.save!
     assert_equal 0, copy.reload.journals.size
   end
@@ -1325,7 +1351,7 @@ class IssueTest < ActiveSupport::TestCase
   test "#copy should create a journal with notes" do
     date = Date.today
     notes = "Notes added when copying"
-    copy = Issue.find(1).copy(:project_id => 3, :tracker_id => 2, :start_date => date)
+    copy = Issue.find(1).copy({:project_id => 3, :tracker_id => 2, :start_date => date}, :link => false)
     copy.init_journal(User.current, notes)
     copy.save!
 
@@ -1619,13 +1645,15 @@ class IssueTest < ActiveSupport::TestCase
     issue2.reload
     assert_equal Date.parse('2012-10-18'), issue2.start_date
 
-    child = Issue.new(:parent_issue_id => issue2.id, :start_date => '2012-10-16',
-      :project_id => 1, :tracker_id => 1, :status_id => 1, :subject => 'Child', :author_id => 1)
-    assert !child.valid?
-    assert_include 'Start date cannot be earlier than 10/18/2012 because of preceding issues', child.errors.full_messages
-    assert_equal Date.parse('2012-10-18'), child.soonest_start
-    child.start_date = '2012-10-18'
-    assert child.save
+    with_settings :date_format => '%m/%d/%Y' do
+      child = Issue.new(:parent_issue_id => issue2.id, :start_date => '2012-10-16',
+        :project_id => 1, :tracker_id => 1, :status_id => 1, :subject => 'Child', :author_id => 1)
+      assert !child.valid?
+      assert_include 'Start date cannot be earlier than 10/18/2012 because of preceding issues', child.errors.full_messages
+      assert_equal Date.parse('2012-10-18'), child.soonest_start
+      child.start_date = '2012-10-18'
+      assert child.save
+    end
   end
 
   def test_setting_parent_to_a_dependent_issue_should_not_validate
@@ -2389,11 +2417,149 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal IssueStatus.find(1), issue.status_was
   end
 
+  def test_status_was_should_return_status_before_change_with_status_id
+    issue = Issue.find(1)
+    assert_equal IssueStatus.find(1), issue.status
+    issue.status_id = 2
+    assert_equal IssueStatus.find(1), issue.status_was
+  end
+
   def test_status_was_should_be_reset_on_save
     issue = Issue.find(1)
     issue.status = IssueStatus.find(2)
     assert_equal IssueStatus.find(1), issue.status_was
     assert issue.save!
     assert_equal IssueStatus.find(2), issue.status_was
+  end
+
+  def test_closing_should_return_true_when_closing_an_issue
+    issue = Issue.find(1)
+    issue.status = IssueStatus.find(2)
+    assert_equal false, issue.closing?
+    issue.status = IssueStatus.find(5)
+    assert_equal true, issue.closing?
+  end
+
+  def test_closing_should_return_true_when_closing_an_issue_with_status_id
+    issue = Issue.find(1)
+    issue.status_id = 2
+    assert_equal false, issue.closing?
+    issue.status_id = 5
+    assert_equal true, issue.closing?
+  end
+
+  def test_closing_should_return_true_for_new_closed_issue
+    issue = Issue.new
+    assert_equal false, issue.closing?
+    issue.status = IssueStatus.find(5)
+    assert_equal true, issue.closing?
+  end
+
+  def test_closing_should_return_true_for_new_closed_issue_with_status_id
+    issue = Issue.new
+    assert_equal false, issue.closing?
+    issue.status_id = 5
+    assert_equal true, issue.closing?
+  end
+
+  def test_closing_should_be_reset_after_save
+    issue = Issue.find(1)
+    issue.status_id = 5
+    assert_equal true, issue.closing?
+    issue.save!
+    assert_equal false, issue.closing?
+  end
+
+  def test_reopening_should_return_true_when_reopening_an_issue
+    issue = Issue.find(8)
+    issue.status = IssueStatus.find(6)
+    assert_equal false, issue.reopening?
+    issue.status = IssueStatus.find(2)
+    assert_equal true, issue.reopening?
+  end
+
+  def test_reopening_should_return_true_when_reopening_an_issue_with_status_id
+    issue = Issue.find(8)
+    issue.status_id = 6
+    assert_equal false, issue.reopening?
+    issue.status_id = 2
+    assert_equal true, issue.reopening?
+  end
+
+  def test_reopening_should_return_false_for_new_open_issue
+    issue = Issue.new
+    issue.status = IssueStatus.find(1)
+    assert_equal false, issue.reopening?
+  end
+
+  def test_reopening_should_be_reset_after_save
+    issue = Issue.find(8)
+    issue.status_id = 2
+    assert_equal true, issue.reopening?
+    issue.save!
+    assert_equal false, issue.reopening?
+  end
+
+  def test_default_status_without_tracker_should_be_nil
+    issue = Issue.new
+    assert_nil issue.tracker
+    assert_nil issue.default_status
+  end
+
+  def test_default_status_should_be_tracker_default_status
+    issue = Issue.new(:tracker_id => 1)
+    assert_not_nil issue.status
+    assert_equal issue.tracker.default_status, issue.default_status
+  end
+
+  def test_initializing_with_tracker_should_set_default_status
+    issue = Issue.new(:tracker => Tracker.find(1))
+    assert_not_nil issue.status
+    assert_equal issue.default_status, issue.status
+  end
+
+  def test_initializing_with_tracker_id_should_set_default_status
+    issue = Issue.new(:tracker_id => 1)
+    assert_not_nil issue.status
+    assert_equal issue.default_status, issue.status
+  end
+
+  def test_setting_tracker_should_set_default_status
+    issue = Issue.new
+    issue.tracker = Tracker.find(1)
+    assert_not_nil issue.status
+    assert_equal issue.default_status, issue.status
+  end
+
+  def test_changing_tracker_should_set_default_status_if_status_was_default
+    WorkflowTransition.delete_all
+    WorkflowTransition.create! :role_id => 1, :tracker_id => 2, :old_status_id => 2, :new_status_id => 1
+    Tracker.find(2).update! :default_status_id => 2
+
+    issue = Issue.new(:tracker_id => 1, :status_id => 1)
+    assert_equal IssueStatus.find(1), issue.status
+    issue.tracker = Tracker.find(2)
+    assert_equal IssueStatus.find(2), issue.status
+  end
+
+  def test_changing_tracker_should_set_default_status_if_status_is_not_used_by_tracker
+    WorkflowTransition.delete_all
+    Tracker.find(2).update! :default_status_id => 2
+
+    issue = Issue.new(:tracker_id => 1, :status_id => 3)
+    assert_equal IssueStatus.find(3), issue.status
+    issue.tracker = Tracker.find(2)
+    assert_equal IssueStatus.find(2), issue.status
+  end
+
+  def test_changing_tracker_should_keep_status_if_status_was_not_default_and_is_used_by_tracker
+    WorkflowTransition.delete_all
+    WorkflowTransition.create! :role_id => 1, :tracker_id => 2, :old_status_id => 2, :new_status_id => 3
+    Tracker.find(2).update! :default_status_id => 2
+
+    issue = Issue.new(:tracker_id => 1, :status_id => 3)
+    assert_equal IssueStatus.find(3), issue.status
+    issue.tracker = Tracker.find(2)
+    assert_equal IssueStatus.find(3), issue.status
   end
 end

@@ -17,7 +17,6 @@
 
 class ProjectsController < ApplicationController
   menu_item :overview
-  menu_item :roadmap, :only => :roadmap
   menu_item :settings, :only => :settings
 
   before_filter :find_project, :except => [ :index, :list, :new, :create, :copy ]
@@ -33,60 +32,52 @@ class ProjectsController < ApplicationController
     end
   end
 
-  helper :sort
-  include SortHelper
   helper :custom_fields
-  include CustomFieldsHelper
   helper :issues
   helper :queries
-  include QueriesHelper
   helper :repositories
-  include RepositoriesHelper
-  include ProjectsHelper
   helper :members
 
   # Lists visible projects
   def index
+    scope = Project.visible.sorted
+
     respond_to do |format|
       format.html {
-        scope = Project
         unless params[:closed]
           scope = scope.active
         end
-        @projects = scope.visible.order('lft').all
+        @projects = scope.to_a
       }
       format.api  {
         @offset, @limit = api_offset_and_limit
-        @project_count = Project.visible.count
-        @projects = Project.visible.offset(@offset).limit(@limit).order('lft').all
+        @project_count = scope.count
+        @projects = scope.offset(@offset).limit(@limit).to_a
       }
       format.atom {
-        projects = Project.visible.order('created_on DESC').limit(Setting.feeds_limit.to_i).all
+        projects = scope.reorder(:created_on => :desc).limit(Setting.feeds_limit.to_i).to_a
         render_feed(projects, :title => "#{Setting.app_title}: #{l(:label_project_latest)}")
       }
     end
   end
 
   def new
-    @issue_custom_fields = IssueCustomField.sorted.all
-    @trackers = Tracker.sorted.all
+    @issue_custom_fields = IssueCustomField.sorted.to_a
+    @trackers = Tracker.sorted.to_a
     @project = Project.new
     @project.safe_attributes = params[:project]
   end
 
   def create
-    @issue_custom_fields = IssueCustomField.sorted.all
-    @trackers = Tracker.sorted.all
+    @issue_custom_fields = IssueCustomField.sorted.to_a
+    @trackers = Tracker.sorted.to_a
     @project = Project.new
     @project.safe_attributes = params[:project]
 
     if validate_parent_id && @project.save
       @project.set_allowed_parent!(params[:project]['parent_id']) if params[:project].has_key?('parent_id')
-      # Add current user as a project member if current user is not admin
       unless User.current.admin?
-        r = Role.givable.find_by_id(Setting.new_project_user_role_id.to_i) || Role.givable.first
-        m = Member.new(:user => User.current, :roles => [r])
-        @project.members << m
+        @project.add_default_member(User.current)
       end
       respond_to do |format|
         format.html {
@@ -109,8 +100,8 @@ class ProjectsController < ApplicationController
   end
 
   def copy
-    @issue_custom_fields = IssueCustomField.sorted.all
-    @trackers = Tracker.sorted.all
+    @issue_custom_fields = IssueCustomField.sorted.to_a
+    @trackers = Tracker.sorted.to_a
     @source_project = Project.find(params[:id])
     if request.get?
       @project = Project.copy_from(@source_project)
@@ -145,8 +136,8 @@ class ProjectsController < ApplicationController
     end
 
     @users_by_role = @project.users_by_role
-    @subprojects = @project.children.visible.all
-    @news = @project.news.limit(5).includes(:author, :project).reorder("#{News.table_name}.created_on DESC").all
+    @subprojects = @project.children.visible.to_a
+    @news = @project.news.limit(5).includes(:author, :project).reorder("#{News.table_name}.created_on DESC").to_a
     @trackers = @project.rolled_up_trackers
 
     cond = @project.project_condition(Setting.display_subprojects_issues?)
@@ -167,10 +158,10 @@ class ProjectsController < ApplicationController
   end
 
   def settings
-    @issue_custom_fields = IssueCustomField.sorted.all
+    @issue_custom_fields = IssueCustomField.sorted.to_a
     @issue_category ||= IssueCategory.new
     @member ||= @project.members.new
-    @trackers = Tracker.sorted.all
+    @trackers = Tracker.sorted.to_a
     @wiki ||= @project.wiki
   end
 
@@ -206,16 +197,16 @@ class ProjectsController < ApplicationController
   end
 
   def archive
-    if request.post?
-      unless @project.archive
-        flash[:error] = l(:error_can_not_archive_project)
-      end
+    unless @project.archive
+      flash[:error] = l(:error_can_not_archive_project)
     end
     redirect_to admin_projects_path(:status => params[:status])
   end
 
   def unarchive
-    @project.unarchive if request.post? && !@project.active?
+    unless @project.active?
+      @project.unarchive
+    end
     redirect_to admin_projects_path(:status => params[:status])
   end
 

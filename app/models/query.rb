@@ -33,7 +33,14 @@ class QueryColumn
   end
 
   def caption
-    @caption_key.is_a?(Symbol) ? l(@caption_key) : @caption_key
+    case @caption_key
+    when Symbol
+      l(@caption_key)
+    when Proc
+      @caption_key.call
+    else
+      @caption_key
+    end
   end
 
   # Returns true if the column is sortable, otherwise false
@@ -288,7 +295,7 @@ class Query < ActiveRecord::Base
   end
 
   def trackers
-    @trackers ||= project.nil? ? Tracker.sorted.all : project.rolled_up_trackers
+    @trackers ||= project.nil? ? Tracker.sorted.to_a : project.rolled_up_trackers
   end
 
   # Returns a hash of localized labels for all filter operators
@@ -306,7 +313,7 @@ class Query < ActiveRecord::Base
   end
 
   def all_projects
-    @all_projects ||= Project.visible.all
+    @all_projects ||= Project.visible.to_a
   end
 
   def all_projects_values
@@ -655,7 +662,7 @@ class Query < ActiveRecord::Base
             sql = "#{db_table}.#{db_field} BETWEEN #{value.first.to_f - 1e-5} AND #{value.first.to_f + 1e-5}"
           end
         else
-          sql = "#{db_table}.#{db_field} IN (" + value.collect{|val| "'#{connection.quote_string(val)}'"}.join(",") + ")"
+          sql = "#{db_table}.#{db_field} IN (" + value.collect{|val| "'#{self.class.connection.quote_string(val)}'"}.join(",") + ")"
         end
       else
         # IN an empty set
@@ -663,7 +670,7 @@ class Query < ActiveRecord::Base
       end
     when "!"
       if value.any?
-        sql = "(#{db_table}.#{db_field} IS NULL OR #{db_table}.#{db_field} NOT IN (" + value.collect{|val| "'#{connection.quote_string(val)}'"}.join(",") + "))"
+        sql = "(#{db_table}.#{db_field} IS NULL OR #{db_table}.#{db_field} NOT IN (" + value.collect{|val| "'#{self.class.connection.quote_string(val)}'"}.join(",") + "))"
       else
         # NOT IN an empty set
         sql = "1=1"
@@ -705,9 +712,9 @@ class Query < ActiveRecord::Base
         end
       end
     when "o"
-      sql = "#{queried_table_name}.status_id IN (SELECT id FROM #{IssueStatus.table_name} WHERE is_closed=#{connection.quoted_false})" if field == "status_id"
+      sql = "#{queried_table_name}.status_id IN (SELECT id FROM #{IssueStatus.table_name} WHERE is_closed=#{self.class.connection.quoted_false})" if field == "status_id"
     when "c"
-      sql = "#{queried_table_name}.status_id IN (SELECT id FROM #{IssueStatus.table_name} WHERE is_closed=#{connection.quoted_true})" if field == "status_id"
+      sql = "#{queried_table_name}.status_id IN (SELECT id FROM #{IssueStatus.table_name} WHERE is_closed=#{self.class.connection.quoted_true})" if field == "status_id"
     when "><t-"
       # between today - n days and today
       sql = relative_date_clause(db_table, db_field, - value.first.to_i, 0)
@@ -769,9 +776,9 @@ class Query < ActiveRecord::Base
       date = Date.today
       sql = date_clause(db_table, db_field, date.beginning_of_year, date.end_of_year)
     when "~"
-      sql = "LOWER(#{db_table}.#{db_field}) LIKE '%#{connection.quote_string(value.first.to_s.downcase)}%'"
+      sql = "LOWER(#{db_table}.#{db_field}) LIKE '%#{self.class.connection.quote_string(value.first.to_s.downcase)}%'"
     when "!~"
-      sql = "LOWER(#{db_table}.#{db_field}) NOT LIKE '%#{connection.quote_string(value.first.to_s.downcase)}%'"
+      sql = "LOWER(#{db_table}.#{db_field}) NOT LIKE '%#{self.class.connection.quote_string(value.first.to_s.downcase)}%'"
     else
       raise "Unknown query operator #{operator}"
     end
@@ -834,7 +841,7 @@ class Query < ActiveRecord::Base
       if self.class.default_timezone == :utc
         from = from.utc
       end
-      s << ("#{table}.#{field} > '%s'" % [connection.quoted_date(from)])
+      s << ("#{table}.#{field} > '%s'" % [self.class.connection.quoted_date(from)])
     end
     if to
       if to.is_a?(Date)
@@ -843,7 +850,7 @@ class Query < ActiveRecord::Base
       if self.class.default_timezone == :utc
         to = to.utc
       end
-      s << ("#{table}.#{field} <= '%s'" % [connection.quoted_date(to)])
+      s << ("#{table}.#{field} <= '%s'" % [self.class.connection.quoted_date(to)])
     end
     s.join(' AND ')
   end

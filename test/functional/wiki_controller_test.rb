@@ -20,7 +20,8 @@ require File.expand_path('../../test_helper', __FILE__)
 class WikiControllerTest < ActionController::TestCase
   fixtures :projects, :users, :roles, :members, :member_roles,
            :enabled_modules, :wikis, :wiki_pages, :wiki_contents,
-           :wiki_content_versions, :attachments
+           :wiki_content_versions, :attachments,
+           :issues, :issue_statuses
 
   def setup
     User.current = nil
@@ -58,7 +59,9 @@ class WikiControllerTest < ActionController::TestCase
   end
 
   def test_show_old_version
-    get :show, :project_id => 'ecookbook', :id => 'CookBook_documentation', :version => '2'
+    with_settings :default_language => 'en' do
+      get :show, :project_id => 'ecookbook', :id => 'CookBook_documentation', :version => '2'
+    end
     assert_response :success
     assert_template 'show'
 
@@ -89,7 +92,9 @@ class WikiControllerTest < ActionController::TestCase
   end
 
   def test_show_first_version
-    get :show, :project_id => 'ecookbook', :id => 'CookBook_documentation', :version => '1'
+    with_settings :default_language => 'en' do
+      get :show, :project_id => 'ecookbook', :id => 'CookBook_documentation', :version => '1'
+    end
     assert_response :success
     assert_template 'show'
 

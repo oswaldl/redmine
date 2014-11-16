@@ -17,7 +17,7 @@
 
 require File.expand_path('../../../test_helper', __FILE__)
 
-class RoutingCustomFieldsTest < ActionController::IntegrationTest
+class RoutingCustomFieldsTest < ActionDispatch::IntegrationTest
   def test_custom_fields
     assert_routing(
         { :method => 'get', :path => "/custom_fields" },
@@ -42,13 +42,6 @@ class RoutingCustomFieldsTest < ActionController::IntegrationTest
     assert_routing(
         { :method => 'delete', :path => "/custom_fields/2" },
         { :controller => 'custom_fields', :action => 'destroy', :id => '2' }
-      )
-  end
-
-  def test_custom_fields_api
-    assert_routing(
-        { :method => 'get', :path => "/custom_fields.xml" },
-        { :controller => 'custom_fields', :action => 'index', :format => 'xml' }
       )
   end
 end

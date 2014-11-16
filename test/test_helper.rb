@@ -25,18 +25,27 @@ require File.expand_path(File.dirname(__FILE__) + '/object_helpers')
 include ObjectHelpers
 
 require 'awesome_nested_set/version'
+require 'net/ldap'
+
+class ActionView::TestCase
+  helper :application
+  include ApplicationHelper
+end
 
 class ActiveSupport::TestCase
   include ActionDispatch::TestProcess
+  include Shoulda::Context::Assertions
+  include Shoulda::Context::InstanceMethods
+  extend Shoulda::Context::ClassMethods
 
   self.use_transactional_fixtures = true
   self.use_instantiated_fixtures  = false
 
-  ESCAPED_CANT  = 'can&#x27;t'
-  ESCAPED_UCANT = 'Can&#x27;t'
+  #ESCAPED_CANT  = 'can&#x27;t'
+  #ESCAPED_UCANT = 'Can&#x27;t'
   # Rails 4.0.2
-  #ESCAPED_CANT  = 'can&#39;t'
-  #ESCAPED_UCANT = 'Can&#39;t'
+  ESCAPED_CANT  = 'can&#39;t'
+  ESCAPED_UCANT = 'Can&#39;t'
 
   def log_user(login, password)
     User.anonymous
@@ -147,7 +156,9 @@ class ActiveSupport::TestCase
 
   # Returns the path to the test +vendor+ repository
   def self.repository_path(vendor)
-    Rails.root.join("tmp/test/#{vendor.downcase}_repository").to_s
+    path = Rails.root.join("tmp/test/#{vendor.downcase}_repository").to_s
+    # Unlike ruby, JRuby returns Rails.root with backslashes under Windows
+    path.tr("\\", "/")
   end
 
   # Returns the url of the subversion test repository
@@ -227,7 +238,29 @@ class ActiveSupport::TestCase
 end
 
 module Redmine
+  class RoutingTest < ActionDispatch::IntegrationTest
+    def should_route(arg)
+      arg = arg.dup
+      request = arg.keys.detect {|key| key.is_a?(String)}
+      raise ArgumentError unless request
+      options = arg.slice!(request)
+
+      raise ArgumentError unless request =~ /\A(GET|POST|PUT|PATCH|DELETE)\s+(.+)\z/
+      method, path = $1.downcase.to_sym, $2
+
+      raise ArgumentError unless arg.values.first =~ /\A(.+)#(.+)\z/
+      controller, action = $1, $2
+
+      assert_routing(
+        {:method => method, :path => path},
+        options.merge(:controller => controller, :action => action)
+      )
+    end
+  end
+
   module ApiTest
+    API_FORMATS = %w(json xml).freeze
+
     # Base class for API tests
     class Base < ActionDispatch::IntegrationTest
       # Test that a request allows the three types of API authentication
@@ -477,6 +510,20 @@ module Redmine
       def self.should_respond_with(status)
         should "respond with #{status}" do
           assert_response status
+        end
+      end
+    end
+
+    class Routing < Redmine::RoutingTest
+      def should_route(arg)
+        arg = arg.dup
+        request = arg.keys.detect {|key| key.is_a?(String)}
+        raise ArgumentError unless request
+        options = arg.slice!(request)
+  
+        API_FORMATS.each do |format|
+          format_request = request.sub /$/, ".#{format}"
+          super options.merge(format_request => arg[request], :format => format)
         end
       end
     end

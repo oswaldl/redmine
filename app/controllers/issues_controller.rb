@@ -24,7 +24,6 @@ class IssuesController < ApplicationController
   before_filter :find_project, :only => [:new, :create, :update_form]
   before_filter :authorize, :except => [:index]
   before_filter :find_optional_project, :only => [:index]
-  before_filter :check_for_default_issue_status, :only => [:new, :create]
   before_filter :build_new_issue_from_params, :only => [:new, :create, :update_form]
   accept_rss_auth :index, :show
   accept_api_auth :index, :show, :create, :update, :destroy
@@ -104,15 +103,16 @@ class IssuesController < ApplicationController
   end
 
   def show
-    @journals = @issue.journals.includes(:user, :details).reorder("#{Journal.table_name}.id ASC").all
+    @journals = @issue.journals.includes(:user, :details).
+                    references(:user, :details).
+                    reorder("#{Journal.table_name}.id ASC").to_a
     @journals.each_with_index {|j,i| j.indice = i+1}
     @journals.reject!(&:private_notes?) unless User.current.allowed_to?(:view_private_notes, @issue.project)
     Journal.preload_journals_details_custom_fields(@journals)
-    # TODO: use #select! when ruby1.8 support is dropped
-    @journals.reject! {|journal| !journal.notes? && journal.visible_details.empty?}
+    @journals.select! {|journal| journal.notes? || journal.visible_details.any?}
     @journals.reverse! if User.current.wants_comments_in_reverse_order?
 
-    @changesets = @issue.changesets.visible.all
+    @changesets = @issue.changesets.visible.to_a
     @changesets.reverse! if User.current.wants_comments_in_reverse_order?
 
     @relations = @issue.relations.select {|r| r.other_issue(@issue) && r.other_issue(@issue).visible? }
@@ -189,7 +189,7 @@ class IssuesController < ApplicationController
     rescue ActiveRecord::StaleObjectError
       @conflict = true
       if params[:last_journal_id]
-        @conflict_journals = @issue.journals_after(params[:last_journal_id]).all
+        @conflict_journals = @issue.journals_after(params[:last_journal_id]).to_a
         @conflict_journals.reject!(&:private_notes?) unless User.current.allowed_to?(:view_private_notes, @issue.project)
       end
     end
@@ -233,7 +233,8 @@ class IssuesController < ApplicationController
     target_projects ||= @projects
 
     if @copy
-      @available_statuses = [IssueStatus.default]
+      # Copied issues will get their default statuses
+      @available_statuses = []
     else
       @available_statuses = @issues.map(&:new_statuses_allowed_to).reduce(:&)
     end
@@ -301,7 +302,7 @@ class IssuesController < ApplicationController
     else
       @saved_issues = @issues
       @unsaved_issues = unsaved_issues
-      @issues = Issue.visible.where(:id => @unsaved_issues.map(&:id)).all
+      @issues = Issue.visible.where(:id => @unsaved_issues.map(&:id)).to_a
       bulk_edit
       render :action => 'bulk_edit'
     end
@@ -375,7 +376,9 @@ class IssuesController < ApplicationController
   def update_issue_from_params
     @edit_allowed = User.current.allowed_to?(:edit_issues, @project)
     @time_entry = TimeEntry.new(:issue => @issue, :project => @issue.project)
-    @time_entry.attributes = params[:time_entry]
+    if params[:time_entry]
+      @time_entry.attributes = params[:time_entry]
+    end
 
     @issue.init_journal(User.current)
 
@@ -403,6 +406,7 @@ class IssuesController < ApplicationController
   def build_new_issue_from_params
     if params[:id].blank?
       @issue = Issue.new
+      @issue.init_journal(User.current)
       if params[:copy_from]
         begin
           @copy_from = Issue.visible.find(params[:copy_from])
@@ -415,33 +419,33 @@ class IssuesController < ApplicationController
         end
       end
       @issue.project = @project
+      @issue.author ||= User.current
+      @issue.start_date ||= Date.today if Setting.default_issue_start_date_to_creation_date?
     else
       @issue = @project.issues.visible.find(params[:id])
     end
 
-    @issue.project = @project
-    @issue.author ||= User.current
-    # Tracker must be set before custom field values
-    @issue.tracker ||= @project.trackers.find((params[:issue] && params[:issue][:tracker_id]) || params[:tracker_id] || :first)
+    if attrs = params[:issue].deep_dup
+      if params[:was_default_status] == attrs[:status_id]
+        attrs.delete(:status_id)
+      end
+      @issue.safe_attributes = attrs
+    end
+    @issue.tracker ||= @project.trackers.first
     if @issue.tracker.nil?
       render_error l(:error_no_tracker_in_project)
       return false
     end
-    @issue.start_date ||= Date.today if Setting.default_issue_start_date_to_creation_date?
-    @issue.safe_attributes = params[:issue]
+    if @issue.status.nil?
+      render_error l(:error_no_default_issue_status)
+      return false
+    end
 
     @priorities = IssuePriority.active
     @allowed_statuses = @issue.new_statuses_allowed_to(User.current, @issue.new_record?)
     @available_watchers = @issue.watcher_users
     if @issue.project.users.count <= 20
       @available_watchers = (@available_watchers + @issue.project.users.sort).uniq
-    end
-  end
-
-  def check_for_default_issue_status
-    if IssueStatus.default.nil?
-      render_error l(:error_no_default_issue_status)
-      return false
     end
   end
 

@@ -472,14 +472,22 @@ class IssuesControllerTest < ActionController::TestCase
     end
   end
 
+  def test_index_csv_should_fill_parent_column_with_parent_id
+    Issue.delete_all
+    parent = Issue.generate!
+    child = Issue.generate!(:parent_issue_id => parent.id)
+
+    with_settings :default_language => 'en' do
+      get :index, :format => 'csv', :c => %w(parent)
+    end
+    lines = response.body.split("\n")
+    assert_include "#{child.id},#{parent.id}", lines
+  end
+
   def test_index_csv_big_5
     with_settings :default_language => "zh-TW" do
-      str_utf8  = "\xe4\xb8\x80\xe6\x9c\x88"
-      str_big5  = "\xa4@\xa4\xeb"
-      if str_utf8.respond_to?(:force_encoding)
-        str_utf8.force_encoding('UTF-8')
-        str_big5.force_encoding('Big5')
-      end
+      str_utf8  = "\xe4\xb8\x80\xe6\x9c\x88".force_encoding('UTF-8')
+      str_big5  = "\xa4@\xa4\xeb".force_encoding('Big5')
       issue = Issue.generate!(:subject => str_utf8)
 
       get :index, :project_id => 1, 
@@ -488,10 +496,7 @@ class IssuesControllerTest < ActionController::TestCase
                   :format => 'csv'
       assert_equal 'text/csv; header=present', @response.content_type
       lines = @response.body.chomp.split("\n")
-      s1 = "\xaa\xac\xbaA"
-      if str_utf8.respond_to?(:force_encoding)
-        s1.force_encoding('Big5')
-      end
+      s1 = "\xaa\xac\xbaA".force_encoding('Big5')
       assert_include s1, lines[0]
       assert_include str_big5, lines[1]
     end
@@ -499,10 +504,7 @@ class IssuesControllerTest < ActionController::TestCase
 
   def test_index_csv_cannot_convert_should_be_replaced_big_5
     with_settings :default_language => "zh-TW" do
-      str_utf8  = "\xe4\xbb\xa5\xe5\x86\x85"
-      if str_utf8.respond_to?(:force_encoding)
-        str_utf8.force_encoding('UTF-8')
-      end
+      str_utf8  = "\xe4\xbb\xa5\xe5\x86\x85".force_encoding('UTF-8')
       issue = Issue.generate!(:subject => str_utf8)
 
       get :index, :project_id => 1, 
@@ -513,21 +515,11 @@ class IssuesControllerTest < ActionController::TestCase
                   :set_filter => 1
       assert_equal 'text/csv; header=present', @response.content_type
       lines = @response.body.chomp.split("\n")
-      s1 = "\xaa\xac\xbaA" # status
-      if str_utf8.respond_to?(:force_encoding)
-        s1.force_encoding('Big5')
-      end
+      s1 = "\xaa\xac\xbaA".force_encoding('Big5') # status
       assert lines[0].include?(s1)
       s2 = lines[1].split(",")[2]
-      if s1.respond_to?(:force_encoding)
-        s3 = "\xa5H?" # subject
-        s3.force_encoding('Big5')
-        assert_equal s3, s2
-      elsif RUBY_PLATFORM == 'java'
-        assert_equal "??", s2
-      else
-        assert_equal "\xa5H???", s2
-      end
+      s3 = "\xa5H?".force_encoding('Big5') # subject
+      assert_equal s3, s2
     end
   end
 
@@ -624,6 +616,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil issues
     assert !issues.empty?
     assert_equal issues.sort {|a,b| a.tracker == b.tracker ? b.id <=> a.id : a.tracker <=> b.tracker }.collect(&:id), issues.collect(&:id)
+    assert_select 'table.issues.sort-by-tracker.sort-asc'
   end
 
   def test_index_sort_by_field_not_included_in_columns
@@ -636,6 +629,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_response :success
     assignees = assigns(:issues).collect(&:assigned_to).compact
     assert_equal assignees.sort, assignees
+    assert_select 'table.issues.sort-by-assigned-to.sort-asc'
   end
   
   def test_index_sort_by_assigned_to_desc
@@ -643,6 +637,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_response :success
     assignees = assigns(:issues).collect(&:assigned_to).compact
     assert_equal assignees.sort.reverse, assignees
+    assert_select 'table.issues.sort-by-assigned-to.sort-desc'
   end
   
   def test_index_group_by_assigned_to
@@ -731,6 +726,16 @@ class IssuesControllerTest < ActionController::TestCase
     query = assigns(:query)
     assert_kind_of IssueQuery, query
     assert_equal columns.map(&:to_sym), query.columns.map(&:name)
+  end
+
+  def test_index_with_default_columns_should_respect_default_columns_order
+    columns = ['assigned_to', 'subject', 'status', 'tracker']
+    with_settings :issue_list_default_columns => columns do
+      get :index, :project_id => 1, :set_filter => 1
+
+      query = assigns(:query)
+      assert_equal (['id'] + columns).map(&:to_sym), query.columns.map(&:name)
+    end
   end
 
   def test_index_with_custom_field_column
@@ -857,6 +862,17 @@ class IssuesControllerTest < ActionController::TestCase
     get :index, :set_filter => 1, :c => %w(subject description), :format => 'pdf'
     assert_response :success
     assert_equal 'application/pdf', response.content_type
+  end
+
+  def test_index_with_parent_column
+    Issue.delete_all
+    parent = Issue.generate!
+    child = Issue.generate!(:parent_issue_id => parent.id)
+
+    get :index, :c => %w(parent)
+
+    assert_select 'td.parent', :text => "#{parent.tracker} ##{parent.id}"
+    assert_select 'td.parent a[title=?]', parent.subject
   end
 
   def test_index_send_html_if_query_is_invalid
@@ -1528,6 +1544,18 @@ class IssuesControllerTest < ActionController::TestCase
     end
   end
 
+  def test_new_should_select_default_status
+    @request.session[:user_id] = 2
+
+    get :new, :project_id => 1
+    assert_response :success
+    assert_template 'new'
+    assert_select 'select[name=?]', 'issue[status_id]' do
+      assert_select 'option[value=1][selected=selected]'
+    end
+    assert_select 'input[name=was_default_status][value=1]'
+  end
+
   def test_get_new_with_list_custom_field
     @request.session[:user_id] = 2
     get :new, :project_id => 1, :tracker_id => 1
@@ -1746,6 +1774,20 @@ class IssuesControllerTest < ActionController::TestCase
 
     assert_equal 5, assigns(:issue).status_id
     assert_equal [1,2,5], assigns(:allowed_statuses).map(&:id).sort
+  end
+
+  def test_update_form_with_default_status_should_ignore_submitted_status_id_if_equals
+    @request.session[:user_id] = 2
+    tracker = Tracker.find(2)
+    tracker.update! :default_status_id => 2
+    tracker.generate_transitions! 2, 1, :clear => true
+
+    xhr :post, :update_form, :project_id => 1,
+                     :issue => {:tracker_id => 2,
+                                :status_id => 1},
+                     :was_default_status => 1
+
+    assert_equal 2, assigns(:issue).status_id
   end
 
   def test_post_create
@@ -2283,13 +2325,17 @@ class IssuesControllerTest < ActionController::TestCase
     get :new, :project_id => 1
     assert_response :success
     assert_template 'new'
+    
+    issue = assigns(:issue)
+    assert_not_nil issue.default_status
+
     assert_select 'select[name=?]', 'issue[status_id]' do
       assert_select 'option', 1
-      assert_select 'option[value=?]', IssueStatus.default.id.to_s
+      assert_select 'option[value=?]', issue.default_status.id.to_s
     end
   end
 
-  test "without workflow privilege #new should accept default status" do
+  test "without workflow privilege #create should accept default status" do
     setup_without_workflow_privilege
     assert_difference 'Issue.count' do
       post :create, :project_id => 1,
@@ -2298,10 +2344,11 @@ class IssuesControllerTest < ActionController::TestCase
                                 :status_id => 1}
     end
     issue = Issue.order('id').last
-    assert_equal IssueStatus.default, issue.status
+    assert_not_nil issue.default_status
+    assert_equal issue.default_status, issue.status
   end
 
-  test "without workflow privilege #new should ignore unauthorized status" do
+  test "without workflow privilege #create should ignore unauthorized status" do
     setup_without_workflow_privilege
     assert_difference 'Issue.count' do
       post :create, :project_id => 1,
@@ -2310,7 +2357,8 @@ class IssuesControllerTest < ActionController::TestCase
                                 :status_id => 3}
     end
     issue = Issue.order('id').last
-    assert_equal IssueStatus.default, issue.status
+    assert_not_nil issue.default_status
+    assert_equal issue.default_status, issue.status
   end
 
   test "without workflow privilege #update should ignore status change" do
@@ -3117,20 +3165,15 @@ class IssuesControllerTest < ActionController::TestCase
   def test_put_update_with_attachment_that_fails_to_save
     set_tmp_attachments_directory
 
-    # Delete all fixtured journals, a race condition can occur causing the wrong
-    # journal to get fetched in the next find.
-    Journal.delete_all
-
-    # Mock out the unsaved attachment
-    Attachment.any_instance.stubs(:create).returns(Attachment.new)
-
     # anonymous user
-    put :update,
-         :id => 1,
-         :issue => {:notes => ''},
-         :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain')}}
-    assert_redirected_to :action => 'show', :id => '1'
-    assert_equal '1 file(s) could not be saved.', flash[:warning]
+    with_settings :attachment_max_size => 0 do
+      put :update,
+           :id => 1,
+           :issue => {:notes => ''},
+           :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain')}}
+      assert_redirected_to :action => 'show', :id => '1'
+      assert_equal '1 file(s) could not be saved.', flash[:warning]
+    end
   end
 
   def test_put_update_with_no_change
@@ -3376,7 +3419,7 @@ class IssuesControllerTest < ActionController::TestCase
     post :bulk_edit, :ids => [1, 2, 6], :issue => {:project_id => 1}
     assert_response :success
     assert_template 'bulk_edit'
-    assert_equal Project.find(1).shared_versions.open.all.sort, assigns(:versions).sort
+    assert_equal Project.find(1).shared_versions.open.to_a.sort, assigns(:versions).sort
 
     assert_select 'select[name=?]', 'issue[fixed_version_id]' do
       assert_select 'option', :text => '2.0'

@@ -192,6 +192,14 @@ class Repository::Cvs < Repository
     @current_revision_number = nil
   end
 
+  protected
+
+  # Overrides Repository#validate_repository_path to validate
+  # against root_url attribute.
+  def validate_repository_path(attribute=:root_url)
+    super(attribute)
+  end
+
   private
 
   # Returns the next revision number to assign to a CVS changeset
@@ -199,7 +207,7 @@ class Repository::Cvs < Repository
     # Need to retrieve existing revision numbers to sort them as integers
     sql = "SELECT revision FROM #{Changeset.table_name} "
     sql << "WHERE repository_id = #{id} AND revision NOT LIKE 'tmp%'"
-    @current_revision_number ||= (connection.select_values(sql).collect(&:to_i).max || 0)
+    @current_revision_number ||= (self.class.connection.select_values(sql).collect(&:to_i).max || 0)
     @current_revision_number += 1
   end
 end

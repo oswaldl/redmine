@@ -34,6 +34,7 @@ class MailerTest < ActiveSupport::TestCase
     Setting.host_name = 'mydomain.foo'
     Setting.protocol = 'http'
     Setting.plain_text_mail = '0'
+    User.current = nil
   end
 
   def test_generated_links_in_emails
@@ -409,6 +410,7 @@ class MailerTest < ActiveSupport::TestCase
 
   def test_issue_edit_with_relation_should_notify_users_who_can_see_the_related_issue
     issue = Issue.generate!
+    issue.init_journal(User.find(1))
     private_issue = Issue.generate!(:is_private => true)
     IssueRelation.create!(:issue_from => issue, :issue_to => private_issue, :relation_type => 'relates')
     issue.reload

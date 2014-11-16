@@ -158,6 +158,7 @@ et:
   general_csv_separator: ","
   general_csv_decimal_separator: "."
   general_csv_encoding: ISO-8859-13
+  general_pdf_fontname: freesans
   general_first_day_of_week: "1"
 
   notice_account_updated: "Konto uuendamine õnnestus."
@@ -1131,3 +1132,9 @@ et:
   label_radio_buttons: radio buttons
   label_group_anonymous: Anonymous users
   label_group_non_member: Non member users
+  label_add_projects: Add projects
+  field_default_status: Default status
+  text_subversion_repository_note: 'Examples: file:///, http://, https://, svn://, svn+[tunnelscheme]://'
+  field_users_visibility: Users visibility
+  label_users_visibility_all: All active users
+  label_users_visibility_members_of_visible_projects: Members of visible projects

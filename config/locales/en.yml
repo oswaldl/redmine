@@ -141,6 +141,7 @@ en:
   general_csv_separator: ','
   general_csv_decimal_separator: '.'
   general_csv_encoding: ISO-8859-1
+  general_pdf_fontname: freesans
   general_first_day_of_week: '7'
 
   notice_account_updated: Account was successfully updated.
@@ -336,6 +337,8 @@ en:
   field_inherit_members: Inherit members
   field_generate_password: Generate password
   field_must_change_passwd: Must change password at next logon
+  field_default_status: Default status
+  field_users_visibility: Users visibility
 
   setting_app_title: Application title
   setting_app_subtitle: Application subtitle
@@ -917,6 +920,9 @@ en:
   label_check_for_updates: Check for updates
   label_latest_compatible_version: Latest compatible version
   label_unknown_plugin: Unknown plugin
+  label_add_projects: Add projects
+  label_users_visibility_all: All active users
+  label_users_visibility_members_of_visible_projects: Members of visible projects
 
   button_login: Login
   button_submit: Submit
@@ -1049,6 +1055,7 @@ en:
   text_zoom_out: Zoom out
   text_warn_on_leaving_unsaved: "The current page contains unsaved text that will be lost if you leave this page."
   text_scm_path_encoding_note: "Default: UTF-8"
+  text_subversion_repository_note: "Examples: file:///, http://, https://, svn://, svn+[tunnelscheme]://"
   text_git_repository_note: Repository is bare and local (e.g. /gitrepo, c:\gitrepo)
   text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)
   text_scm_command: Command

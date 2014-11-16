@@ -18,7 +18,7 @@
 require File.expand_path('../../test_helper', __FILE__)
 
 class IssueStatusesControllerTest < ActionController::TestCase
-  fixtures :issue_statuses, :issues, :users
+  fixtures :issue_statuses, :issues, :users, :trackers
 
   def setup
     User.current = nil
@@ -86,7 +86,8 @@ class IssueStatusesControllerTest < ActionController::TestCase
   end
 
   def test_destroy
-    Issue.delete_all("status_id = 1")
+    Issue.where(:status_id => 1).delete_all
+    Tracker.where(:default_status_id => 1).delete_all
 
     assert_difference 'IssueStatus.count', -1 do
       delete :destroy, :id => '1'
@@ -95,8 +96,20 @@ class IssueStatusesControllerTest < ActionController::TestCase
     assert_nil IssueStatus.find_by_id(1)
   end
 
-  def test_destroy_should_block_if_status_in_use
-    assert_not_nil Issue.find_by_status_id(1)
+  def test_destroy_should_block_if_status_is_used_by_issues
+    assert Issue.where(:status_id => 1).any?
+    Tracker.where(:default_status_id => 1).delete_all
+
+    assert_no_difference 'IssueStatus.count' do
+      delete :destroy, :id => '1'
+    end
+    assert_redirected_to :action => 'index'
+    assert_not_nil IssueStatus.find_by_id(1)
+  end
+
+  def test_destroy_should_block_if_status_is_used_as_tracker_default_status
+    Issue.where(:status_id => 1).delete_all
+    assert Tracker.where(:default_status_id => 1).any?
 
     assert_no_difference 'IssueStatus.count' do
       delete :destroy, :id => '1'

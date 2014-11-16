@@ -17,7 +17,7 @@
 
 require File.expand_path('../../../test_helper', __FILE__)
 
-class RoutingEnumerationsTest < ActionController::IntegrationTest
+class RoutingEnumerationsTest < ActionDispatch::IntegrationTest
   def test_enumerations
     assert_routing(
         { :method => 'get', :path => "/enumerations" },
@@ -42,10 +42,6 @@ class RoutingEnumerationsTest < ActionController::IntegrationTest
     assert_routing(
         { :method => 'delete', :path => "/enumerations/2" },
         { :controller => 'enumerations', :action => 'destroy', :id => '2' }
-      )
-    assert_routing(
-        { :method => 'get', :path => "/enumerations/issue_priorities.xml" },
-        { :controller => 'enumerations', :action => 'index', :type => 'issue_priorities', :format => 'xml' }
       )
   end
 end

@@ -17,19 +17,11 @@
 
 require File.expand_path('../../../test_helper', __FILE__)
 
-class RoutingRolesTest < ActionController::IntegrationTest
+class RoutingRolesTest < ActionDispatch::IntegrationTest
   def test_roles
     assert_routing(
         { :method => 'get', :path => "/roles" },
         { :controller => 'roles', :action => 'index' }
-      )
-    assert_routing(
-        { :method => 'get', :path => "/roles.xml" },
-        { :controller => 'roles', :action => 'index', :format => 'xml' }
-      )
-    assert_routing(
-        { :method => 'get', :path => "/roles/2.xml" },
-        { :controller => 'roles', :action => 'show', :id => '2', :format => 'xml' }
       )
     assert_routing(
         { :method => 'get', :path => "/roles/new" },

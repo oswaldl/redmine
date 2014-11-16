@@ -18,14 +18,12 @@
 class TimelogController < ApplicationController
   menu_item :issues
 
-  before_filter :find_project_for_new_time_entry, :only => [:create]
   before_filter :find_time_entry, :only => [:show, :edit, :update]
   before_filter :find_time_entries, :only => [:bulk_edit, :bulk_update, :destroy]
-  before_filter :authorize, :except => [:new, :index, :report]
+  before_filter :authorize, :only => [:show, :edit, :update, :bulk_edit, :bulk_update, :destroy]
 
-  before_filter :find_optional_project, :only => [:index, :report]
-  before_filter :find_optional_project_for_new_time_entry, :only => [:new]
-  before_filter :authorize_global, :only => [:new, :index, :report]
+  before_filter :find_optional_project, :only => [:new, :create, :index, :report]
+  before_filter :authorize_global, :only => [:new, :create, :index, :report]
 
   accept_rss_auth :index
   accept_api_auth :index, :show, :create, :update, :destroy
@@ -54,7 +52,7 @@ class TimelogController < ApplicationController
       format.html {
         @entry_count = scope.count
         @entry_pages = Paginator.new @entry_count, per_page_option, params['page']
-        @entries = scope.offset(@entry_pages.offset).limit(@entry_pages.per_page).all
+        @entries = scope.offset(@entry_pages.offset).limit(@entry_pages.per_page).to_a
         @total_hours = scope.sum(:hours).to_f
 
         render :layout => !request.xhr?
@@ -62,15 +60,15 @@ class TimelogController < ApplicationController
       format.api  {
         @entry_count = scope.count
         @offset, @limit = api_offset_and_limit
-        @entries = scope.offset(@offset).limit(@limit).preload(:custom_values => :custom_field).all
+        @entries = scope.offset(@offset).limit(@limit).preload(:custom_values => :custom_field).to_a
       }
       format.atom {
-        entries = scope.limit(Setting.feeds_limit.to_i).reorder("#{TimeEntry.table_name}.created_on DESC").all
+        entries = scope.limit(Setting.feeds_limit.to_i).reorder("#{TimeEntry.table_name}.created_on DESC").to_a
         render_feed(entries, :title => l(:label_spent_time))
       }
       format.csv {
         # Export all entries
-        @entries = scope.all
+        @entries = scope.to_a
         send_data(query_to_csv(@entries, @query, params), :type => 'text/csv; header=present', :filename => 'timelog.csv')
       }
     end
@@ -104,6 +102,10 @@ class TimelogController < ApplicationController
   def create
     @time_entry ||= TimeEntry.new(:project => @project, :issue => @issue, :user => User.current, :spent_on => User.current.today)
     @time_entry.safe_attributes = params[:time_entry]
+    if @time_entry.project && !User.current.allowed_to?(:log_time, @time_entry.project)
+      render_403
+      return
+    end
 
     call_hook(:controller_timelog_edit_before_save, { :params => params, :time_entry => @time_entry })
 
@@ -112,21 +114,19 @@ class TimelogController < ApplicationController
         format.html {
           flash[:notice] = l(:notice_successful_create)
           if params[:continue]
-            if params[:project_id]
-              options = {
-                :time_entry => {:issue_id => @time_entry.issue_id, :activity_id => @time_entry.activity_id},
-                :back_url => params[:back_url]
-              }
-              if @time_entry.issue
-                redirect_to new_project_issue_time_entry_path(@time_entry.project, @time_entry.issue, options)
-              else
-                redirect_to new_project_time_entry_path(@time_entry.project, options)
-              end
+            options = {
+              :time_entry => {
+                :project_id => params[:time_entry][:project_id],
+                :issue_id => @time_entry.issue_id,
+                :activity_id => @time_entry.activity_id
+              },
+              :back_url => params[:back_url]
+            }
+            if params[:project_id] && @time_entry.project
+              redirect_to new_project_time_entry_path(@time_entry.project, options)
+            elsif params[:issue_id] && @time_entry.issue
+              redirect_to new_issue_time_entry_path(@time_entry.issue, options)
             else
-              options = {
-                :time_entry => {:project_id => @time_entry.project_id, :issue_id => @time_entry.issue_id, :activity_id => @time_entry.activity_id},
-                :back_url => params[:back_url]
-              }
               redirect_to new_time_entry_path(options)
             end
           else
@@ -232,7 +232,7 @@ private
   end
 
   def find_time_entries
-    @time_entries = TimeEntry.where(:id => params[:id] || params[:ids]).all
+    @time_entries = TimeEntry.where(:id => params[:id] || params[:ids]).to_a
     raise ActiveRecord::RecordNotFound if @time_entries.empty?
     @projects = @time_entries.collect(&:project).compact.uniq
     @project = @projects.first if @projects.size == 1
@@ -251,32 +251,15 @@ private
     end
   end
 
-  def find_optional_project_for_new_time_entry
-    if (project_id = (params[:project_id] || params[:time_entry] && params[:time_entry][:project_id])).present?
-      @project = Project.find(project_id)
-    end
-    if (issue_id = (params[:issue_id] || params[:time_entry] && params[:time_entry][:issue_id])).present?
-      @issue = Issue.find(issue_id)
-      @project ||= @issue.project
+  def find_optional_project
+    if params[:issue_id].present?
+      @issue = Issue.find(params[:issue_id])
+      @project = @issue.project
+    elsif params[:project_id].present?
+      @project = Project.find(params[:project_id])
     end
   rescue ActiveRecord::RecordNotFound
     render_404
-  end
-
-  def find_project_for_new_time_entry
-    find_optional_project_for_new_time_entry
-    if @project.nil?
-      render_404
-    end
-  end
-
-  def find_optional_project
-    if !params[:issue_id].blank?
-      @issue = Issue.find(params[:issue_id])
-      @project = @issue.project
-    elsif !params[:project_id].blank?
-      @project = Project.find(params[:project_id])
-    end
   end
 
   # Returns the TimeEntry scope for index and report actions

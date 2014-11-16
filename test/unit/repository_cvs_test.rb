@@ -22,7 +22,7 @@ class RepositoryCvsTest < ActiveSupport::TestCase
 
   include Redmine::I18n
 
-  REPOSITORY_PATH = Rails.root.join('tmp/test/cvs_repository').to_s
+  REPOSITORY_PATH = repository_path('cvs')
   REPOSITORY_PATH.gsub!(/\//, "\\") if Redmine::Platform.mswin?
   # CVS module
   MODULE_NAME    = 'test'
@@ -52,8 +52,7 @@ class RepositoryCvsTest < ActiveSupport::TestCase
 
   def test_blank_module_error_message_fr
     set_language_if_valid 'fr'
-    str = "Module doit \xc3\xaatre renseign\xc3\xa9(e)"
-    str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
+    str = "Module doit \xc3\xaatre renseign\xc3\xa9(e)".force_encoding('UTF-8')
     repo = Repository::Cvs.new(
                           :project       => @project,
                           :identifier    => 'test',
@@ -81,8 +80,7 @@ class RepositoryCvsTest < ActiveSupport::TestCase
 
   def test_blank_cvsroot_error_message_fr
     set_language_if_valid 'fr'
-    str = "CVSROOT doit \xc3\xaatre renseign\xc3\xa9(e)"
-    str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
+    str = "CVSROOT doit \xc3\xaatre renseign\xc3\xa9(e)".force_encoding('UTF-8')
     repo = Repository::Cvs.new(
                           :project       => @project,
                           :identifier    => 'test',
@@ -93,6 +91,24 @@ class RepositoryCvsTest < ActiveSupport::TestCase
                         )
     assert !repo.save
     assert_include str, repo.errors.full_messages
+  end
+
+  def test_root_url_should_be_validated_against_regexp_set_in_configuration
+    Redmine::Configuration.with 'scm_cvs_path_regexp' => '/cvspath/[a-z]+' do
+      repo = Repository::Cvs.new(
+        :project       => @project,
+        :identifier    => 'test',
+        :log_encoding  => 'UTF-8',
+        :path_encoding => '',
+        :url           => MODULE_NAME
+      )
+      repo.root_url = '/wrong_path'
+      assert !repo.valid?
+      assert repo.errors[:root_url].present?
+
+      repo.root_url = '/cvspath/foo'
+      assert repo.valid?
+    end
   end
 
   if File.directory?(REPOSITORY_PATH)

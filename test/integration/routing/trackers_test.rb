@@ -17,31 +17,19 @@
 
 require File.expand_path('../../../test_helper', __FILE__)
 
-class RoutingTrackersTest < ActionController::IntegrationTest
+class RoutingTrackersTest < ActionDispatch::IntegrationTest
   def test_trackers
     assert_routing(
         { :method => 'get', :path => "/trackers" },
         { :controller => 'trackers', :action => 'index' }
       )
     assert_routing(
-        { :method => 'get', :path => "/trackers.xml" },
-        { :controller => 'trackers', :action => 'index', :format => 'xml' }
-      )
-    assert_routing(
         { :method => 'post', :path => "/trackers" },
         { :controller => 'trackers', :action => 'create' }
       )
     assert_routing(
-        { :method => 'post', :path => "/trackers.xml" },
-        { :controller => 'trackers', :action => 'create', :format => 'xml' }
-      )
-    assert_routing(
         { :method => 'get', :path => "/trackers/new" },
         { :controller => 'trackers', :action => 'new' }
-      )
-    assert_routing(
-        { :method => 'get', :path => "/trackers/new.xml" },
-        { :controller => 'trackers', :action => 'new', :format => 'xml' }
       )
     assert_routing(
         { :method => 'get', :path => "/trackers/1/edit" },
@@ -53,19 +41,9 @@ class RoutingTrackersTest < ActionController::IntegrationTest
           :id => '1' }
       )
     assert_routing(
-        { :method => 'put', :path => "/trackers/1.xml" },
-        { :controller => 'trackers', :action => 'update',
-          :format => 'xml', :id => '1' }
-      )
-    assert_routing(
         { :method => 'delete', :path => "/trackers/1" },
         { :controller => 'trackers', :action => 'destroy',
           :id => '1' }
-      )
-    assert_routing(
-        { :method => 'delete', :path => "/trackers/1.xml" },
-        { :controller => 'trackers', :action => 'destroy',
-          :format => 'xml', :id => '1' }
       )
     assert_routing(
         { :method => 'get', :path => "/trackers/fields" },

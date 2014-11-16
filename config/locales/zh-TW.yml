@@ -225,6 +225,7 @@
   general_csv_separator: ','
   general_csv_decimal_separator: '.'
   general_csv_encoding: Big5
+  general_pdf_fontname: msungstdlight
   general_first_day_of_week: '7'
 
   notice_account_updated: 帳戶更新資訊已儲存
@@ -421,6 +422,7 @@
   field_inherit_members: 繼承父專案成員
   field_generate_password: 產生密碼
   field_must_change_passwd: 必須在下次登入時變更密碼
+  field_default_status: 預設狀態
 
   setting_app_title: 標題
   setting_app_subtitle: 副標題
@@ -1002,6 +1004,7 @@
   label_check_for_updates: 檢查更新
   label_latest_compatible_version: 最新的相容版本
   label_unknown_plugin: 無法辨識的外掛程式
+  label_add_projects: 加入專案
 
   button_login: 登入
   button_submit: 送出
@@ -1195,3 +1198,7 @@
   description_date_from: 輸入起始日期
   description_date_to: 輸入結束日期
   text_repository_identifier_info: '僅允許使用小寫英文字母 (a-z), 阿拉伯數字, 虛線與底線。<br />一旦儲存之後, 代碼便無法再次被更改。'
+  text_subversion_repository_note: 'Examples: file:///, http://, https://, svn://, svn+[tunnelscheme]://'
+  field_users_visibility: Users visibility
+  label_users_visibility_all: All active users
+  label_users_visibility_members_of_visible_projects: Members of visible projects
