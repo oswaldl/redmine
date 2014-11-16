@@ -54,7 +54,7 @@ module RedmineApp
     end
 
     # observers , @oswaldl
-    config.active_record.observers = :project_observer, :repository_observer
+    # config.active_record.observers = :project_observer, :repository_observer
 
   end
 end
