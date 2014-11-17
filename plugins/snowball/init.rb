@@ -1,6 +1,14 @@
 require 'redmine'
+require 'github_hook/updater'
 require 'snowball_repo_helper_patch'
 require 'snowball_github'
+
+
+begin
+  require 'octokit'
+rescue LoadError
+  raise 'octokit not found!! please run `bundle install`'
+end
 
 require_dependency 'snowball_hook_listener'
 require_dependency 'scm_repositories_helper_patch'
@@ -19,13 +27,17 @@ Rails.configuration.to_prepare do
     Repository::Github.send(:include, SnowballGithub)
   end
 
-  # unless GithubCreator.included_modules.include?(SnowballGithubCreatorPatch)
-  #   GithubCreator.send(:include, SnowballGithubCreatorPatch)
-  # end
+  unless GithubCreator.included_modules.include?(SnowballGithubCreatorPatch)
+    GithubCreator.send(:include, SnowballGithubCreatorPatch)
+  end
 
-  # unless ScmRepositoriesControllerPatch::InstanceMethods.included_modules.include?(SnowballRepoControllerGithubPatch)
-  #   ScmRepositoriesControllerPatch::InstanceMethods.send(:include, SnowballRepoControllerGithubPatch)
-  # end
+  unless ScmRepositoriesControllerPatch::InstanceMethods.included_modules.include?(SnowballRepoControllerGithubPatch)
+    ScmRepositoriesControllerPatch::InstanceMethods.send(:include, SnowballRepoControllerGithubPatch)
+  end
+
+  unless GithubHook::Updater.included_modules.include?(SnowballGithubHookUpdaterPatch)
+    GithubHook::Updater.send(:include, SnowballGithubHookUpdaterPatch)
+  end
 
   #unless RepositoriesController.included_modules.include?(ScmRepositoriesControllerPatch)
   #  RepositoriesController.send(:include, ScmRepositoriesControllerPatch)
@@ -77,6 +89,7 @@ Redmine::Plugin.register :snowball do
     #menu :project_menu, :snowball, { :controller => 'snowball_project_vote', :action => 'test' }, :caption => '开源社区Project Menu', :after => :activity, :param => :project_id
   #end
 
+  permission :repo_fork, :repositories => :fork, :public => true
 
   #追加github建库设置
   # settings :default => {},

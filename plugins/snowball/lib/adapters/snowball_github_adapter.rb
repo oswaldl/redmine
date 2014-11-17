@@ -6,7 +6,7 @@ module Redmine
       class SnowballGithubAdapter < AbstractAdapter
 
         # Git executable name
-        GITHUB_BIN = Redmine::Configuration['scm_git_command'] || "git"
+        GIT_BIN = Redmine::Configuration['scm_git_command'] || "git"
 
         class GitBranch < Branch
           attr_accessor :is_default
@@ -14,7 +14,7 @@ module Redmine
 
         class << self
           def client_command
-            @@bin    ||= GITHUB_BIN
+            @@bin    ||= GIT_BIN
           end
 
           def sq_bin
@@ -372,6 +372,7 @@ module Redmine
 
         def git_cmd(args, options = {}, &block)
           puts "** calling github scm #{args}"
+          puts "#{args.join(' ')}"
 
           #repo_path = root_url || url
           http_path = root_url || url
@@ -379,7 +380,7 @@ module Redmine
           start_index = http_path.rindex('/')
           end_index = http_path.length
 
-          repo_path = ScmConfig['github']['path'].to_s + http_path[start_index,end_index] +ScmConfig['github']['append'].to_s
+          repo_path = ScmConfig['github']['path'].to_s + http_path[start_index,end_index]
 
           full_args = ['--git-dir', repo_path]
           if self.class.client_version_above?([1, 7, 2])

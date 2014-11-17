@@ -7,10 +7,10 @@ require_dependency 'adapters/snowball_github_adapter'
 module SnowballGithub
 
   def self.included(base)
+    puts "** including SnowballGithub"
+
     base.extend(ClassMethods)
     base.send(:include, InstanceMethods)
-
-    puts "** including SnowballGithub"
 
     base.class_eval do
       unloadable
@@ -22,6 +22,7 @@ module SnowballGithub
       #alias_method_chain :save_revision, :add
       #alias_method_chain :git_command, :add
       alias_method_chain :register_hook, :add
+      alias_method_chain :set_local_url, :add
 
 
 
@@ -65,7 +66,7 @@ module SnowballGithub
       start_index = http_path.rindex('/')
       end_index = http_path.length
 
-      repo_path = ScmConfig['github']['path'].to_s + http_path[start_index,end_index] +ScmConfig['github']['append'].to_s
+      repo_path = ScmConfig['github']['path'].to_s + http_path[start_index,end_index] #+ScmConfig['github']['append'].to_s
 
       logger.info "cd #{repo_path} and do #{git_command} 'fetch -q --all -p'"
       args = [ git_command, 'fetch' ]
@@ -186,6 +187,12 @@ module SnowballGithub
 
     def git_command#_with_add
       Redmine::Scm::Adapters::GitAdapter::GIT_BIN
+    end
+
+    def set_local_url_with_add
+      if new_record? && url.present? && root_url.blank?
+        self.root_url=File.expand_path(self.identifier, ScmConfig['github']['path'].to_s)
+      end
     end
 
     def register_hook_with_add
