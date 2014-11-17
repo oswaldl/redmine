@@ -83,7 +83,7 @@ Redmine::Plugin.register :snowball do
     permission :hello_polls, :snowball_project_vote => :hello
     #permission :snowball, {:snowball => [:hello]}, :public => true
     #menu :project_menu, :snowball_project_vote, {:controller => 'snowball_project_vote', :action => 'hello'},
-         :caption => '开源社区Project Menu', :first => true, :param => :project_id
+    #     :caption => '开源社区Project Menu', :first => true, :param => :project_id
 
     #permission :snowball, { :snowball => [:test] }, :public => true
     #menu :project_menu, :snowball, { :controller => 'snowball_project_vote', :action => 'test' }, :caption => '开源社区Project Menu', :after => :activity, :param => :project_id
