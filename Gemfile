@@ -106,3 +106,4 @@ end
 
 
 gem 'byebug'
+gem 'rails-observers'
