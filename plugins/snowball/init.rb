@@ -77,12 +77,12 @@ Redmine::Plugin.register :snowball do
 
   #project_module :snowball do
 
-    menu :application_menu, :snowball_project_vote, { :controller => 'snowball_project_vote', :action => 'index' }, :caption => '开源社区菜单测试'
+    #menu :application_menu, :snowball_project_vote, { :controller => 'snowball_project_vote', :action => 'index' }, :caption => '开源社区菜单测试'
 
     permission :view_polls, :snowball_project_vote => :index
     permission :hello_polls, :snowball_project_vote => :hello
     #permission :snowball, {:snowball => [:hello]}, :public => true
-    menu :project_menu, :snowball_project_vote, {:controller => 'snowball_project_vote', :action => 'hello'},
+    #menu :project_menu, :snowball_project_vote, {:controller => 'snowball_project_vote', :action => 'hello'},
          :caption => '开源社区Project Menu', :first => true, :param => :project_id
 
     #permission :snowball, { :snowball => [:test] }, :public => true
