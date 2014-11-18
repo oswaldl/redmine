@@ -1,0 +1,89 @@
+
+<h2>版本库 New Pull Request</h2>
+<!-- Form Begin -->
+<%= labelled_form_for :repository,
+                      @repository,
+                      :url => {controller: 'snowball_repo', action:'new_pull_request_submit', id:@repository.id},
+                      :html => {:method => :post, :id => 'repository-new-pull-request-form'} do |f| %>
+
+    <!-- tabular Begin -->
+    <div class="box tabular">
+
+      <%= hidden_field_tag 'repository_scm', 'Github', :id => 'repository_scm' %>
+
+      <p>
+        <label>
+          标题
+        </label>
+
+        <input type="text" name="pull_title">
+      </p>
+
+
+      <% if @repository %>
+
+          <p>
+            <label>
+              Pull Request
+            </label>
+
+            <span style="background: #fff;display: inline-block;
+                    padding: 5px 10px;border: 1px solid #ddd; border-radius: 3px;
+            ">
+                Base Fork:
+                <select name="base_repo">
+                  <option value="<%=@repo_base.full_name %>"><%=@repo_base.full_name %></option>
+                </select>
+                <select name="base_branch">
+                  <option value="<%=@repo_base.default_branch %>"><%=@repo_base.default_branch %></option>
+                </select>
+            </span>
+
+            <span style="background: #fff;display: inline-block;
+                    padding: 5px 10px;border: 1px solid #ddd; border-radius: 3px;
+            ">
+                Head Fork:
+                <select name="head_repo">
+                  <option value="<%=@repo_head.full_name %>"><%=@repo_head.full_name %></option>
+                </select>
+                <select name="head_branch">
+                  <option value="<%=@repo_base.default_branch %>"><%=@repo_head.default_branch %></option>
+                </select>
+            </span>
+          </p>
+
+          <p>
+            <label>
+              备注
+            </label>
+
+            <textarea class="pull_body" cols="80" id="pull_body" name="pull_body" rows="15"></textarea>
+          </p>
+
+      <% end %>
+    </div>
+    <!-- tabular End -->
+
+    <!-- Form Button Begin -->
+    <p>
+      <%= submit_tag('提交', :id => 'new_pull_request_submit') %>
+      <%= link_to l(:button_cancel), "#{project_path(@project)}/repository/#{(@repository.identifier)}" %>
+    </p>
+    <!-- Form Button Begin -->
+
+
+
+
+<% end %>
+<!-- Form End -->
+
+
+
+
+
+
+<% content_for :header_tags do %>
+    <%= stylesheet_link_tag "scm" %>
+<% end %>
+
+<% html_title(l(:label_repository)) %>

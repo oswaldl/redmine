@@ -1,0 +1,116 @@
+
+<h2>版本库 Merge Pull Request</h2>
+
+<style>
+.timeline-comment {
+    position: relative;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+.timeline-comment-header {
+    padding-left: 15px;
+    padding-right: 15px;
+    border-bottom: 1px solid #e1edf1;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    color: #8e9597;
+    background-color: #f2f8fa;
+}
+.timeline-comment-header-text {
+    max-width: 78%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+.timeline-comment-wrapper {
+    position: relative;
+    padding-left: 64px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border-top: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+}
+.timeline-comment-avatar {
+    float: left;
+    margin-left: -64px;
+    border-radius: 3px;
+}
+.timeline-comment-wrapper>.timeline-comment:after, .timeline-comment-wrapper>.timeline-comment:before, .timeline-new-comment .timeline-comment:after, .timeline-new-comment .timeline-comment:before {
+    position: absolute;
+    top: 11px;
+    left: -16px;
+    right: 100%;
+    width: 0;
+    height: 0;
+    display: block;
+    content: " ";
+    border-color: transparent;
+    border-style: solid solid outset;
+    pointer-events: none;
+}
+.timeline-comment-wrapper>.timeline-comment:before, .timeline-new-comment .timeline-comment:before {
+    border-width: 8px;
+    border-right-color: #bfccd1;
+}
+.timeline-comment-wrapper>.timeline-comment:after, .timeline-new-comment .timeline-comment:after {
+    border-width: 7px;
+    margin-top: 1px;
+    margin-left: 2px;
+    border-right-color: #f2f8fa;
+}
+.comment-body {
+    width: 100%;
+    padding: 15px;
+    overflow: visible;
+    font-size: 14px;
+}
+</style>
+
+
+
+<!-- Form Begin -->
+<%= labelled_form_for :repository,
+                      @repository,
+                      :url => {controller: 'snowball_repo', action:'merge_pull_request_submit', id:@repository.id},
+                      :html => {:method => :post, :id => 'repository-merge-pull-request-form'} do |f| %>
+
+<input type="hidden" class="oper_type" name="oper_type" value="merge">
+<input type="hidden" name="merge_number" value="<%=@merge_request.number%>">
+
+<div>
+  <div class="timeline-comment-wrapper">
+
+    <span>
+      <img alt="<%=@merge_request.user.login%>"
+           class="timeline-comment-avatar" height="48"
+           src="<%=@merge_request.user.avatar_url%>" width="48">
+    </span>
+
+    <div class="timeline-comment">
+      <div class="timeline-comment-header">
+        <div class="timeline-comment-header-text">
+          <%=@merge_request.user.login%> created at <%=@merge_request.created_at%>
+        </div>
+      </div>
+
+      <div class="comment-body"><%=@merge_request.body%></div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:right;">
+    <input type="button" value="Close Pull Request" onclick="$(this).closest('form').find('.oper_type').val('close');$(this).closest('form').submit();">
+    <%= submit_tag('Merge Pull Request', :id => 'merge_pull_request_submit', :onclick=>"$(this).closest('form').find('.oper_type').val('merge');$(this).closest('form').submit();return false;") %>
+    <%= link_to '返回', {:controller=>'snowball_repo',:action=>'show_pull_requests',:id=>@repository.identifier}, :onclick=>'window.history.back();return false;'%>
+</div>
+
+
+<% end %>
+
+
+
+<% content_for :header_tags do %>
+    <%= stylesheet_link_tag "scm" %>
+<% end %>
+
+<% html_title(l(:label_repository)) %>

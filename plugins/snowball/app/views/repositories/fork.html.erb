@@ -1,0 +1,134 @@
+
+<% unless params[:error].nil? %>
+<div id='errorExplanation'>
+  <ul>
+    <li><%= "#{h params[:error].to_s}" %></li>
+  </ul>
+</div>
+<% end %>
+
+
+<h2>版本库 Fork New</h2>
+<!-- Form Begin -->
+<%= labelled_form_for :repository,
+                      @repository,
+                      :url => {controller: 'snowball_repo', action:'create_fork', id:@repository.id},
+                      :html => {:method => :post, :id => 'repository-fork-form'} do |f| %>
+
+<!-- tabular Begin -->
+<div class="box tabular">
+
+<%= hidden_field_tag 'repository_scm', 'Github', :id => 'repository_scm' %>
+
+<p>
+<%= f.text_field 'project', :disabled => false, :value=>'test1', :label=>'目标项目', :change=>'onProjectChange' %>
+</p>
+
+<p>
+<%= f.text_field :identifier, :disabled => false, :value=>'' %>
+<% unless Redmine::VERSION::MAJOR < 2 || Redmine::VERSION::MINOR < 2 %>
+  <em class="info">
+    <%= l(:text_length_between, :min => 1, :max => Repository::IDENTIFIER_MAX_LENGTH) %> <%= l(:text_repository_identifier_info).html_safe %>
+  </em>
+<% end %>
+</p>
+
+
+<% button_disabled = true %>
+<% if @repository %>
+
+  <!-- Fork From -->
+    <p>
+        <label for="repository_fork_from">
+        Fork From<span class="required"> *</span>
+        </label>
+        <input type="text" name="repository[fork_from]" size="60" value="<%=html_escape(@repository.url)%>"/>
+        <br> (eg. https://github.com/gorebill/test.git)
+    </p>
+
+    <!-- Fork To -->
+    <% @repository.login='gorebill'; %>
+    <% @repository.password=''; %>
+    <% @repository.url=''; %>
+
+    <%  button_disabled = ! @repository.class.scm_available %>
+    <%= repository_field_tags(f, @repository) %>
+
+<% end %>
+</div>
+<!-- tabular End -->
+
+<!-- Form Button Begin -->
+<p>
+<%= submit_tag(@repository.new_record? ? l(:button_create) : l(:button_save), :id => 'repository_save', :disabled => button_disabled) %>
+<%= link_to l(:button_cancel), settings_project_path(@project, :tab => 'repositories') %>
+</p>
+<!-- Form Button Begin -->
+
+
+
+
+
+
+
+<% end %>
+<!-- Form End -->
+
+
+
+
+
+
+<% content_for :header_tags do %>
+  <%= stylesheet_link_tag "scm" %>
+<% end %>
+
+<% html_title(l(:label_repository)) -%>
+
+
+<script type="text/javascript">
+$(function (){
+    $('#repository_url').removeAttr('disabled');
+
+    $('label[for="repository_url"]').html('Fork To<span class="required"> *</span>')
+
+    // insert note for repository_url
+    $('<span><br>The organization repo forked to.(eg. https://github.com/Oopz)</span>').insertAfter($('#repository_url'));
+
+    // insert label and adjust its css
+    $('<label><%="#{@project.identifier.to_s}"%>-</label>')
+      .insertBefore($('#repository_identifier'))
+      .attr('id', 'identifier-prefix')
+      .css('margin-left', 0)
+      .css('float', 'none')
+      .css('font-weight', 'normal')
+      .css('padding', '1px 4px')
+      .css('border', '1px solid #e0e2e3')
+      .css('height', '22px')
+      .css('display', 'inline-block')
+      .css('width', 'auto')
+      .css('border-right', 'none')
+      .css('background', '#fff')
+      .css('border-top-left-radius', '3px')
+      .css('border-bottom-left-radius', '3px');
+
+    // bind change/keyup event for #repository_project
+    $('#repository_project').bind('change keyup', function(){
+        var projName=$(this).val();
+        $('#identifier-prefix').text((projName && projName+'-') || '前缀');
+    }).trigger('change');
+
+    // added required markup
+    $('#repository_login').prev('label').html($('#repository_login').prev('label').html() + '<span class="required"> *</span>');
+    $('#repository_password').prev('label').html($('#repository_password').prev('label').html() + '<span class="required"> *</span>');
+
+    // bind form submit modifier for identifier
+    $('form#repository-fork-form').bind('submit',function(){
+        var prefix=$(this).find('#identifier-prefix').hide().text();
+        var identifier=$(this).find('input#repository_identifier');
+        $(identifier).val(prefix + $(identifier).val()).attr('readonly','readonly');
+    });
+});
+</script>
+
+

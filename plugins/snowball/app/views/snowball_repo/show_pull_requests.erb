@@ -1,0 +1,43 @@
+
+<h2>版本库 Show Pull Requests</h2>
+
+
+
+<table class="list">
+  <thead>
+      <tr>
+        <th width="10%">Number</th>
+        <th width="30%">Title & Link</th>
+        <th>Author</th>
+      </tr>
+  </thead>
+
+  <tbody>
+    <% unless @merge_requests.nil? %>
+      <% @merge_requests.each do |pull_request| %>
+          <tr>
+            <td><%=pull_request.number%></td>
+            <td><%= link_to "#{pull_request.title}", {:controller=>'snowball_repo',
+                                                      :action=>'merge_pull_request',
+                                                      :id=>@repository.identifier,
+                                                      :pull_number=>pull_request.number}%></td>
+            <td><%=pull_request.user.login%></td>
+          </tr>
+      <% end %>
+    <% end %>
+  </tbody>
+
+</table>
+
+<p>
+  <%= link_to '返回', "#{project_path(@project)}/repository/#{(@repository.identifier)}" %>
+</p>
+
+
+
+
+<% content_for :header_tags do %>
+    <%= stylesheet_link_tag "scm" %>
+<% end %>
+
+<% html_title(l(:label_repository)) %>
