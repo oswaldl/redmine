@@ -34,6 +34,11 @@ production:
     options: --mirror
     url: http://zyac-open.chinacloudapp.cn:8888
     append: .git
+  github:
+    path: /var/scm_repo/github
+    options: --mirror
+    url: http://github.com
+    append: .git
 
 development:
   deny_delete: true
@@ -75,8 +80,8 @@ development:
     path: /var/scm_repo/github
     options: --mirror
     url: http://github.com
-    #append: .git
-    api:
-      token: db05118d03e86cc9eff5fbd1712b73f8a01091c7
+    append: .git
+    #api:
+      #token: db05118d03e86cc9eff5fbd1712b73f8a01091c7
       #username:
       #password:
