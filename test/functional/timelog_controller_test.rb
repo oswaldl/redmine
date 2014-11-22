@@ -37,7 +37,7 @@ class TimelogControllerTest < ActionController::TestCase
     assert_select 'input[name=?][type=hidden]', 'issue_id', 0
     assert_select 'select[name=?]', 'time_entry[project_id]' do
       # blank option for project
-      assert_select 'option[value=]'
+      assert_select 'option[value=""]'
     end
   end
 
@@ -67,7 +67,7 @@ class TimelogControllerTest < ActionController::TestCase
     assert_response :success
     assert_template 'new'
     assert_select 'select[name=?]', 'time_entry[project_id]' do
-      assert_select 'option[value=1][selected=selected]'
+      assert_select 'option[value="1"][selected=selected]'
     end
   end
 
@@ -100,8 +100,7 @@ class TimelogControllerTest < ActionController::TestCase
     get :edit, :id => 2, :project_id => nil
     assert_response :success
     assert_template 'edit'
-    # Default activity selected
-    assert_tag :tag => 'form', :attributes => { :action => '/projects/ecookbook/time_entries/2' }
+    assert_tag :tag => 'form', :attributes => { :action => '/time_entries/2' }
   end
 
   def test_get_edit_with_an_existing_time_entry_with_inactive_activity
@@ -362,8 +361,8 @@ class TimelogControllerTest < ActionController::TestCase
   
       # Activities
       assert_select 'select[name=?]', 'time_entry[activity_id]' do
-        assert_select 'option[value=]', :text => '(No change)'
-        assert_select 'option[value=9]', :text => 'Design'
+        assert_select 'option[value=""]', :text => '(No change)'
+        assert_select 'option[value="9"]', :text => 'Design'
       end
     end
   end
