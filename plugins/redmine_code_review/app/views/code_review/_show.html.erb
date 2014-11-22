@@ -110,7 +110,8 @@
             <%
             submit_url = url_for(:controller => 'code_review', :action => 'update', :id => @project)
             -%>
-            <%= button_to_function l(:button_apply), "$('#show_review_#{@review.id}').load('#{submit_url}', $('##{review_form_id}').serialize())" %>
+            <input class="button" onclick="$('#show_review_#{@review.id}').load('#{submit_url}', $('##{review_form_id}').serialize())" type="button" value="<%=l(:button_apply) %>" />
+
             <input type="button" value="<%=h l(:button_cancel) %>" onclick='$("#review_form_<%= @review.id %>").hide();' />
             <%= link_to_function l(:label_preview), "$('#preview_#{@review.id}').load('#{url_for(:controller => 'code_review', :action => 'preview', :id => @project)}', $('##{review_form_id}').serialize())" %>
           </p>
@@ -170,7 +171,7 @@
             <%
             submit_url = url_for(:controller => 'code_review', :action => 'reply', :id => @project)
             -%>
-            <%= button_to_function l(:button_apply), "$('#show_review_#{@review.id}').load('#{submit_url}', $('##{message_form_id}').serialize())" %>
+            <input class="button" onclick="$('#show_review_#{@review.id}').load('#{submit_url}', $('##{message_form_id}').serialize())" type="button" value="<%=l(:button_apply) %>" />
             <%
             reply_preview_id = "reply_preview_#{@review.id}"
             -%>
