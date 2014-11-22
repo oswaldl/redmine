@@ -23,7 +23,8 @@ is_target = false
 if project and controller and project.module_enabled?(:code_review)
   is_target = true
   is_target = false unless User.current.allowed_to?({:controller => 'code_review', :action => 'update_diff_view'}, project)
-  setting = CodeReviewProjectSetting.find(:first, :conditions => ['project_id = ?', project.id])
+  settings = CodeReviewProjectSetting.where(:project => project)
+  setting = settings[0] unless settings.length == 0
   is_target = false unless setting
   is_target = false if(setting && setting.tracker_id == nil)
   action_name = controller.action_name
