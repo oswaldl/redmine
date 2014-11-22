@@ -78,7 +78,17 @@ module ChangeInstanceMethodsCodeReview
     return unless CodeReviewAssignment.where(:changeset  => changeset).length == 0
     return unless changeset.repository
     return unless changeset.repository.project
-    setting = CodeReviewProjectSetting.find_or_create(changeset.repository.project)
+
+    logger.info "------------CodeReviewAssignment:#{CodeReviewAssignment.where(:changeset  => changeset)}"
+    code_review_project_setting_list = CodeReviewProjectSetting.where(:project  => changeset.repository.project)
+    if code_review_project_setting_list.length == 0
+      logger.info "------------CodeReviewProjectSetting create"
+      setting = CodeReviewProjectSetting.create(changeset.repository.project)
+      logger.info "------------CodeReviewProjectSetting create done"
+    else
+      setting = code_review_project_setting_list[0]
+    end
+
     auto_assign = setting.auto_assign_settings
     return unless auto_assign.enabled?
     return unless auto_assign.match_with_change?(self)
