@@ -75,7 +75,7 @@ module ChangeInstanceMethodsCodeReview
   end
 
   def review_auto_assign
-    return unless CodeReviewAssignment.where(:changeset_id  =>changeset).length == 0
+    return unless CodeReviewAssignment.where(:changeset  => changeset).length == 0
     return unless changeset.repository
     return unless changeset.repository.project
     setting = CodeReviewProjectSetting.find_or_create(changeset.repository.project)
