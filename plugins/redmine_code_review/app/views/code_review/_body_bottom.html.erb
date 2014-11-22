@@ -23,6 +23,7 @@ is_target = false
 if project and controller and project.module_enabled?(:code_review)
   is_target = true
   is_target = false unless User.current.allowed_to?({:controller => 'code_review', :action => 'update_diff_view'}, project)
+  # update by os , use where instead of find, for find cause exception here
   settings = CodeReviewProjectSetting.where(:project => project)
   setting = settings[0] unless settings.length == 0
   is_target = false unless setting
